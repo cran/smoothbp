@@ -1,0 +1,62 @@
+TARGET = $(subst 64,x86_64,$(subst 32,i686,$(WIN)))-pc-windows-gnu
+
+TARGET_DIR = ./rust/target
+LIBDIR = $(TARGET_DIR)/$(TARGET)/@LIBDIR@
+STATLIB = $(LIBDIR)/libsmoothbp.a
+PKG_LIBS = -L$(LIBDIR) -lsmoothbp -lws2_32 -ladvapi32 -luserenv -lbcrypt -lntdll
+
+all: $(SHLIB) rust_clean
+
+.PHONY: $(STATLIB)
+
+$(SHLIB): $(STATLIB)
+
+# Place cargo home in R's short temporary directory path to avoid paths with spaces/dashes
+CARGOTMP := $(shell "${R_HOME}/bin/Rscript" -e "cat(normalizePath(utils::shortPathName(tempdir()), winslash='/'))")/.smoothbp_cargo_tmp
+# cygpath -m converts MSYS-style /c/Users/... to Windows-style C:/Users/...
+# so that native Cargo can read the path correctly from the TOML config.
+VENDOR_PATH = $(shell cygpath -m "$(CURDIR)")/vendor
+
+$(STATLIB):
+	mkdir -p $(TARGET_DIR)/libgcc_mock
+	touch $(TARGET_DIR)/libgcc_mock/libgcc_eh.a
+
+  # If a vendor directory exists, it is used for offline compilation. Otherwise if
+  # vendor.tar.xz exists, it is unzipped and used for offline compilation.
+  # The config.toml is generated with an absolute path to avoid Cargo misresolving
+  # the 'directory' key relative to CARGO_HOME rather than the config file location.
+	if [ -d ./vendor ]; then \
+		echo "=== Using offline vendor directory ==="; \
+		mkdir -p "$(CARGOTMP)" && \
+		printf '[source.crates-io]\nreplace-with = "vendored-sources"\n\n[source.vendored-sources]\ndirectory = "$(VENDOR_PATH)"\n' > "$(CARGOTMP)/config.toml"; \
+	elif [ -f ./rust/vendor.tar.xz ]; then \
+		echo "=== Using offline vendor tarball ==="; \
+		tar xf rust/vendor.tar.xz && \
+		mkdir -p "$(CARGOTMP)" && \
+		printf '[source.crates-io]\nreplace-with = "vendored-sources"\n\n[source.vendored-sources]\ndirectory = "$(VENDOR_PATH)"\n' > "$(CARGOTMP)/config.toml"; \
+	else \
+		mkdir -p "$(CARGOTMP)"; \
+	fi
+
+	# Append target-specific Windows linker and ar paths dynamically to CARGOTMP
+	printf '\n[target.x86_64-pc-windows-gnu]\nlinker = "@LINKER@"\nar     = "@AR@"\n' >> "$(CARGOTMP)/config.toml"
+
+	# Build the project using Cargo with additional flags
+	export CARGO_HOME="$(CARGOTMP)" && \
+	export LIBRARY_PATH="$(LIBRARY_PATH);$(CURDIR)/$(TARGET_DIR)/libgcc_mock" && \
+	RUSTFLAGS="$(RUSTFLAGS) --print=native-static-libs" cargo build @CRAN_FLAGS@ --target=$(TARGET) --lib @PROFILE@ --manifest-path=rust/Cargo.toml --target-dir=$(TARGET_DIR)
+
+	# Generate wrappers. Set same LIBRARY_PATH as the lib build so the linker
+	# can find libgcc_eh.a (mocked by the libgcc_mock stub created above).
+	export CARGO_HOME="$(CARGOTMP)" && \
+	export LIBRARY_PATH="$(LIBRARY_PATH);$(CURDIR)/$(TARGET_DIR)/libgcc_mock" && \
+	cargo run @CRAN_FLAGS@ @PROFILE@ --bin document --target $(TARGET) --manifest-path=./rust/Cargo.toml --target-dir $(TARGET_DIR)
+
+	# Always clean up CARGOTMP
+	rm -Rf "$(CARGOTMP)";
+
+rust_clean: $(SHLIB)
+	rm -Rf "$(CARGOTMP)" $(VENDOR_DIR) @CLEAN_TARGET@
+
+clean:
+	rm -Rf $(SHLIB) $(STATLIB) $(OBJECTS) $(TARGET_DIR) $(VENDOR_DIR)

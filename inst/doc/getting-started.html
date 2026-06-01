@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Getting Started with smoothbp</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Getting Started with smoothbp</h1>
+
+
+
+<div id="overview" class="section level2">
+<h2>Overview</h2>
+<p><code>smoothbp</code> fits hierarchical piecewise regression models
+with <strong>multiple change-points</strong>, each smoothed by a
+logistic sigmoid. The general mean function for <span class="math inline">\(K\)</span> change-points is:</p>
+<p><span class="math display">\[
+\mu_i = b0_i + b1_i(\tau_i - \omega_{1i}) +
+  \sum_{k=1}^{K} \delta_{ki}(\tau_i - \omega_{ki})\,
+  \sigma\!\left[(\tau_i - \omega_{ki})\rho_{ki}\right]
+\]</span></p>
+<p>where</p>
+<table>
+<colgroup>
+<col width="57%" />
+<col width="42%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Symbol</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><span class="math inline">\(\tau\)</span></td>
+<td>time / covariate</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(\omega_k\)</span></td>
+<td>location of the <span class="math inline">\(k\)</span>-th
+change-point</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(\rho_k\)</span></td>
+<td>transition sharpness for change-point <span class="math inline">\(k\)</span> (<span class="math inline">\(\rho \to
+\infty\)</span> → hard kink)</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(b0\)</span></td>
+<td>level at the first change-point</td>
+</tr>
+<tr class="odd">
+<td><span class="math inline">\(b1\)</span></td>
+<td>pre-change slope (anchored at <span class="math inline">\(\omega_1\)</span>)</td>
+</tr>
+<tr class="even">
+<td><span class="math inline">\(\delta_k\)</span></td>
+<td>slope change attributable to change-point <span class="math inline">\(k\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>When <span class="math inline">\(K = 0\)</span> the model reduces to
+a standard hierarchical linear regression. When <span class="math inline">\(K = 1\)</span> it matches the classic two-phase
+piecewise model.</p>
+<p>Each parameter has its own linear predictor specified via a formula.
+<code>b0</code> may also include a random intercept
+<code>(1 | group)</code> for clustered / repeated-measures data.</p>
+<p>Posterior inference uses a <strong>Metropolis-within-Gibbs sampler
+written in Rust</strong>:</p>
+<ul>
+<li><span class="math inline">\(b0\)</span>, <span class="math inline">\(b1\)</span>, <span class="math inline">\(\delta_k\)</span>, random intercepts — exact Gibbs
+(conjugate normal).</li>
+<li><span class="math inline">\(\omega_k\)</span>, <span class="math inline">\(\rho_k\)</span> — Hamiltonian Monte Carlo with
+adaptive mass matrix during warmup.</li>
+<li><span class="math inline">\(\sigma\)</span>, <span class="math inline">\(\sigma_u\)</span> — exact Gibbs (inverse-gamma
+conjugate).</li>
+<li><span class="math inline">\(\gamma_k\)</span> (spike-and-slab) —
+Gibbs with Bernoulli likelihood.</li>
+</ul>
+<hr />
+</div>
+<div id="real-world-applications" class="section level2">
+<h2>Real-World Applications</h2>
+<p>While <code>smoothbp</code> is a general-purpose statistical tool, it
+is uniquely powerful for modeling structural changes across various
+scientific domains:</p>
+<ul>
+<li><strong>Pharmacokinetics / Medicine</strong>: Modeling the delayed
+onset of a drug’s effect and identifying the precise time threshold
+where clearance rates exponentially shift.</li>
+<li><strong>Ecology / Climate Science</strong>: Identifying “tipping
+points” where species population growth trajectories abruptly change in
+response to accumulated temperature variations.</li>
+<li><strong>Epidemiology</strong>: Tracking structural shifts in
+infection rates (<span class="math inline">\(R_0\)</span>) to pinpoint
+exactly when a public health intervention successfully flattened the
+curve.</li>
+<li><strong>Finance</strong>: Discovering the exact timing of market
+regime shifts and measuring how individual assets respond differently to
+global economic shocks.</li>
+</ul>
+<hr />
+</div>
+<div id="simulating-data" class="section level2">
+<h2>Simulating data</h2>
+<p><code>simulate_smoothbp()</code> generates synthetic data from the
+model. It is useful for testing and for understanding how the parameters
+relate to the observable trajectory shape.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(smoothbp)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>dat <span class="ot">&lt;-</span> <span class="fu">simulate_smoothbp</span>(</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>  <span class="at">n_subj    =</span> <span class="dv">20</span>,</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>  <span class="at">n_obs     =</span> <span class="dv">8</span>,</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>  <span class="at">b0        =</span> <span class="fl">5.0</span>,   <span class="co"># level at change-point</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>  <span class="at">b1        =</span> <span class="sc">-</span><span class="fl">0.3</span>,  <span class="co"># pre-change slope</span></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>  <span class="at">b2        =</span>  <span class="fl">1.2</span>,  <span class="co"># slope change (delta_1)</span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>  <span class="at">omega     =</span>  <span class="fl">3.0</span>,  <span class="co"># change-point location</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>  <span class="at">rho       =</span>  <span class="fl">4.0</span>,  <span class="co"># transition sharpness</span></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>  <span class="at">sigma     =</span>  <span class="fl">0.4</span>,  <span class="co"># residual SD</span></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>  <span class="at">sigma_u   =</span>  <span class="fl">0.5</span>,  <span class="co"># between-subject SD</span></span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a>  <span class="at">tau_range =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">6</span>),</span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a>  <span class="at">seed      =</span> <span class="dv">42</span></span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a>)</span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a></span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a><span class="fu">head</span>(dat)</span>
+<span id="cb1-18"><a href="#cb1-18" tabindex="-1"></a><span class="fu">true_params</span>(dat)</span></code></pre></div>
+<hr />
+</div>
+<div id="fitting-the-model" class="section level2">
+<h2>Fitting the model</h2>
+<div id="zero-change-points-linear-fallback" class="section level3">
+<h3>Zero change-points (linear fallback)</h3>
+<p>When <code>deltas</code>, <code>omega</code>, and <code>rho</code>
+are empty lists, <code>smoothbp</code> fits a standard hierarchical
+linear regression:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a>fit0 <span class="ot">&lt;-</span> <span class="fu">smoothbp</span>(</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="at">formula =</span> y <span class="sc">~</span> tau,</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="at">b0      =</span> <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> subject),</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="at">b1      =</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">deltas  =</span> <span class="fu">list</span>(),   <span class="co"># no change-points</span></span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="at">omega   =</span> <span class="fu">list</span>(),</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>  <span class="at">rho     =</span> <span class="fu">list</span>(),</span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>  <span class="at">data    =</span> dat,</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a>  <span class="at">chains  =</span> <span class="dv">2</span><span class="dt">L</span>, <span class="at">iter =</span> <span class="dv">1000</span><span class="dt">L</span>, <span class="at">warmup =</span> <span class="dv">500</span><span class="dt">L</span>, <span class="at">seed =</span> <span class="dv">42</span><span class="dt">L</span>, <span class="at">.verbose =</span> <span class="cn">FALSE</span></span>
+<span id="cb2-10"><a href="#cb2-10" tabindex="-1"></a>)</span>
+<span id="cb2-11"><a href="#cb2-11" tabindex="-1"></a><span class="fu">summary</span>(fit0)</span></code></pre></div>
+</div>
+<div id="one-change-point" class="section level3">
+<h3>One change-point</h3>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>fit1 <span class="ot">&lt;-</span> <span class="fu">smoothbp</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="at">formula =</span> y <span class="sc">~</span> tau,</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="at">b0      =</span> <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> subject),</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="at">b1      =</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="at">deltas  =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span>),          <span class="co"># one slope change</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  <span class="at">omega   =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span>),          <span class="co"># one change-point location</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="at">rho     =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span>),          <span class="co"># one sharpness</span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">data    =</span> dat,</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="at">priors  =</span> <span class="fu">smoothbp_priors</span>(</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>    <span class="at">omega =</span> <span class="fu">list</span>(<span class="fu">prior_normal</span>(<span class="dv">3</span>, <span class="dv">2</span>, <span class="at">lb =</span> <span class="dv">0</span>))</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>  ),</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>  <span class="at">chains  =</span> <span class="dv">4</span><span class="dt">L</span>, <span class="at">iter =</span> <span class="dv">2000</span><span class="dt">L</span>, <span class="at">warmup =</span> <span class="dv">1000</span><span class="dt">L</span>, <span class="at">seed =</span> <span class="dv">42</span><span class="dt">L</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>)</span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="fu">summary</span>(fit1)</span></code></pre></div>
+</div>
+<div id="multiple-change-points-the-list-of-formulas-api" class="section level3">
+<h3>Multiple change-points (The List-of-Formulas API)</h3>
+<p>For models with multiple structural breaks, <code>smoothbp</code>
+uses a “List-of-Formulas” API. You pass lists of equal length to
+<code>deltas</code>, <code>omega</code>, and <code>rho</code>. Each
+element in the list corresponds to the sub-model for that specific
+breakpoint.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># Fit a model with 3 candidate breakpoints</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>fit3 <span class="ot">&lt;-</span> <span class="fu">smoothbp</span>(</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">formula =</span> y <span class="sc">~</span> tau,</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">b0      =</span> <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> subject),</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>  <span class="at">b1      =</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  <span class="co"># Each segment gets its own formula (here, just an intercept)</span></span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  <span class="at">deltas  =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span>, <span class="sc">~</span> <span class="dv">1</span>, <span class="sc">~</span> <span class="dv">1</span>), </span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="at">omega   =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span>, <span class="sc">~</span> <span class="dv">1</span>, <span class="sc">~</span> <span class="dv">1</span>),</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>  <span class="at">rho     =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span>, <span class="sc">~</span> <span class="dv">1</span>, <span class="sc">~</span> <span class="dv">1</span>),</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a>  <span class="at">data    =</span> dat,</span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a>  <span class="at">priors  =</span> <span class="fu">smoothbp_priors</span>(</span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a>    <span class="co"># Use the space_omega_priors helper to initialize the search</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a>    <span class="at">omega =</span> <span class="fu">space_omega_priors</span>(<span class="at">K =</span> <span class="dv">3</span>, <span class="at">tau_min =</span> <span class="dv">0</span>, <span class="at">tau_max =</span> <span class="dv">6</span>)</span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a>  )</span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>)</span></code></pre></div>
+</div>
+<div id="known-change-points-with-fixed" class="section level3">
+<h3>Known Change-Points with <code>fixed()</code></h3>
+<p>If you are performing an intervention analysis (e.g., a Regression
+Discontinuity Design or a Stepped-Wedge trial), you may already know
+exactly where the change points should be.</p>
+<p>By using the <code>fixed()</code> helper, you tell the model
+<strong>not</strong> to estimate the location or sharpness, but only the
+magnitude of the change (<span class="math inline">\(\delta\)</span>).
+This is much faster and allows for direct hypothesis testing of the
+intervention effect.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="co"># Test for a hard kink at exactly tau = 3.0</span></span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>fit_fixed <span class="ot">&lt;-</span> <span class="fu">smoothbp_ss</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="at">formula =</span> y <span class="sc">~</span> tau,</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="at">omega   =</span> <span class="fu">list</span>(<span class="fu">fixed</span>(<span class="fl">3.0</span>)),   <span class="co"># Location is known</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">rho     =</span> <span class="fu">list</span>(<span class="fu">fixed</span>(<span class="dv">100</span>)),   <span class="co"># Sharpness is fixed (hard kink)</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">data    =</span> dat</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>)</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co"># The PIP tells us the probability that the intervention had an effect</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="fu">pip</span>(fit_fixed)</span></code></pre></div>
+<blockquote>
+<p><strong>Note</strong>: <code>fixed()</code> can also accept a vector
+of the same length as your data, allowing for observation-specific
+change points (e.g., different intervention times per cluster).</p>
+</blockquote>
+<blockquote>
+<p><strong>Tip</strong>: If you are unsure how many change-points are
+present, use <code>smoothbp_ss()</code> with spike-and-slab
+regularization — see <code>vignette(&quot;spike-and-slab&quot;)</code>.</p>
+</blockquote>
+</div>
+<div id="progress-and-parallel-chains" class="section level3">
+<h3>Progress and parallel chains</h3>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>fit1 <span class="ot">&lt;-</span> <span class="fu">smoothbp</span>(</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="at">formula =</span> y <span class="sc">~</span> tau,</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="at">b0      =</span> <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> subject),</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="at">data    =</span> dat,</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="at">chains  =</span> <span class="dv">4</span><span class="dt">L</span>, <span class="at">iter =</span> <span class="dv">2000</span><span class="dt">L</span>, <span class="at">warmup =</span> <span class="dv">1000</span><span class="dt">L</span>, <span class="at">seed =</span> <span class="dv">42</span><span class="dt">L</span>,</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="at">cores   =</span> <span class="dv">4</span><span class="dt">L</span>    <span class="co"># run all 4 chains concurrently</span></span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>)</span></code></pre></div>
+<p>To make parallel the default for a project, add this to
+<code>.Rprofile</code>:</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">options</span>(<span class="at">smoothbp.cores =</span> parallel<span class="sc">::</span><span class="fu">detectCores</span>())</span></code></pre></div>
+<hr />
+</div>
+</div>
+<div id="posterior-summary" class="section level2">
+<h2>Posterior summary</h2>
+<p><code>print()</code> displays results in distinct, labelled sections;
+<code>summary()</code> returns a clean data frame. By default,
+<code>effects = c(&quot;fixed&quot;, &quot;ran_pars&quot;)</code> is used, matching the
+conventions of other mixed-modeling packages like <code>brms</code>.</p>
+<p>You can filter which parameters are returned or printed by passing a
+vector to the <code>effects</code> argument. The parameters are
+classified into three strict categories: 1. <code>&quot;fixed&quot;</code>:
+Population-level structural parameters (<span class="math inline">\(b0,
+b1, \delta, \omega, \rho, \sigma\)</span>) 2. <code>&quot;ran_pars&quot;</code>:
+Group-level variance parameters (e.g., <code>sigma_u</code>) 3.
+<code>&quot;ran_vals&quot;</code>: The actual group-level deviations (e.g., the
+individual <code>u[j]</code> random intercepts)</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">print</span>(fit1)                                        <span class="co"># fixed + ran_pars (default)</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="fu">print</span>(fit1, <span class="at">effects =</span> <span class="st">&quot;fixed&quot;</span>)                     <span class="co"># population-level only</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">summary</span>(fit1, <span class="at">effects =</span> <span class="st">&quot;all&quot;</span>)                     <span class="co"># returns everything, including u[j]</span></span></code></pre></div>
+<p>Parameter names follow the convention:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>b0_(Intercept)</code></td>
+<td>Intercept (level at first change-point)</td>
+</tr>
+<tr class="even">
+<td><code>b1_(Intercept)</code></td>
+<td>Pre-change slope</td>
+</tr>
+<tr class="odd">
+<td><code>delta1_(Intercept)</code></td>
+<td>Slope change at change-point 1</td>
+</tr>
+<tr class="even">
+<td><code>omega1_(Intercept)</code></td>
+<td>Change-point 1 location</td>
+</tr>
+<tr class="odd">
+<td><code>rho1_(Intercept)</code></td>
+<td>Change-point 1 sharpness</td>
+</tr>
+<tr class="even">
+<td><code>sigma</code></td>
+<td>Residual SD</td>
+</tr>
+<tr class="odd">
+<td><code>sigma_u</code></td>
+<td>Between-group SD (random intercept)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+</div>
+<div id="diagnostics" class="section level2">
+<h2>Diagnostics</h2>
+<div id="trace-plots-with-mixing-indicators" class="section level3">
+<h3>Trace plots with mixing indicators</h3>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">plot</span>(fit1)        <span class="co"># alias for trace_plot(fit1)</span></span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="fu">trace_plot</span>(fit1, <span class="at">type =</span> <span class="st">&quot;both&quot;</span>)   <span class="co"># trace + density</span></span></code></pre></div>
+<p>Parameters with <span class="math inline">\(\hat{R} &gt;
+1.05\)</span> or bulk-ESS <span class="math inline">\(&lt; 100\)</span>
+are flagged with a ⚠ symbol and a red-tinted background. Thresholds are
+adjustable:</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">trace_plot</span>(fit1, <span class="at">rhat_thresh =</span> <span class="fl">1.01</span>, <span class="at">ess_thresh =</span> <span class="dv">400</span>)</span></code></pre></div>
+</div>
+<div id="posterior-predictive-check" class="section level3">
+<h3>Posterior predictive check</h3>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">pp_check</span>(fit1)</span></code></pre></div>
+<hr />
+</div>
+</div>
+<div id="prior-specification" class="section level2">
+<h2>Prior specification</h2>
+<p><code>smoothbp_priors()</code> accepts either a single prior applied
+to all coefficients of a component, or a named list. For
+multi-breakpoint models, <code>omega</code> and <code>rho</code> accept
+a <strong>list of priors</strong> (one per breakpoint):</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a><span class="fu">smoothbp_priors</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  <span class="at">b0    =</span> <span class="fu">prior_normal</span>(<span class="dv">0</span>, <span class="dv">10</span>),</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="at">b1    =</span> <span class="fu">prior_normal</span>(<span class="dv">0</span>, <span class="dv">5</span>),</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  <span class="at">omega =</span> <span class="fu">list</span>(</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>    <span class="fu">prior_normal</span>(<span class="dv">2</span>, <span class="dv">1</span>),   <span class="co"># change-point 1</span></span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>    <span class="fu">prior_normal</span>(<span class="dv">5</span>, <span class="dv">1</span>)    <span class="co"># change-point 2</span></span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>  ),</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>  <span class="at">rho   =</span> <span class="fu">list</span>(</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>    <span class="fu">prior_normal</span>(<span class="dv">4</span>, <span class="dv">2</span>, <span class="at">lb =</span> <span class="dv">0</span>),</span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>    <span class="fu">prior_normal</span>(<span class="dv">4</span>, <span class="dv">2</span>, <span class="at">lb =</span> <span class="dv">0</span>)</span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a>  ),</span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a>  <span class="at">sigma =</span> <span class="fu">prior_invgamma</span>(<span class="at">shape =</span> <span class="dv">2</span>, <span class="at">scale =</span> <span class="dv">1</span>)</span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>)</span></code></pre></div>
+<p>The <code>lb</code> and <code>ub</code> arguments impose hard bounds.
+<code>rho</code> should typically have <code>lb = 0</code> (sharpness
+must be positive). For <code>omega</code> and <code>deltas</code>, it is
+often better to <strong>avoid hard bounds</strong> unless they are
+physically necessary for your domain.</p>
+<blockquote>
+<p><strong>Performance Tip</strong>: <code>smoothbp</code> is
+significantly faster when <code>b1</code>, <code>deltas</code>, and
+<code>omega</code> are unconstrained. Without bounds, the sampler can
+use exact conjugate Gibbs updates for <code>b1</code> and
+<code>deltas</code>, and standard HMC for <code>omega</code>. Truncated
+priors require additional checks and rejection sampling steps.</p>
+</blockquote>
+<p>If you do use bounds for <code>omega</code>, ensure they cover the
+actual range of your time variable (e.g. if your time starts at -10, do
+not use <code>lb = 0</code>).</p>
+<hr />
+</div>
+<div id="breakpoint-selection-with-spike-and-slab" class="section level2">
+<h2>Breakpoint selection with spike-and-slab</h2>
+<p>When the number of change-points is unknown, fit a model with <span class="math inline">\(K\)</span> potential breakpoints using
+<code>smoothbp_ss()</code>. Each slope change <span class="math inline">\(\delta_k\)</span> has a binary inclusion indicator
+<span class="math inline">\(\gamma_k\)</span>; the posterior mean of
+<span class="math inline">\(\gamma_k\)</span> is the <strong>posterior
+inclusion probability (PIP)</strong> for that breakpoint.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>fit_ss <span class="ot">&lt;-</span> <span class="fu">smoothbp_ss</span>(</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>  <span class="at">formula =</span> y <span class="sc">~</span> tau,</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="at">b0      =</span> <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> subject),</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="at">b1      =</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="at">deltas  =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span>, <span class="sc">~</span> <span class="dv">1</span>, <span class="sc">~</span> <span class="dv">1</span>),   <span class="co"># 3 candidate breakpoints</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>  <span class="at">omega   =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span>, <span class="sc">~</span> <span class="dv">1</span>, <span class="sc">~</span> <span class="dv">1</span>),</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>  <span class="at">rho     =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span>, <span class="sc">~</span> <span class="dv">1</span>, <span class="sc">~</span> <span class="dv">1</span>),</span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a>  <span class="at">data    =</span> dat,</span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a>  <span class="at">spike   =</span> <span class="fu">prior_spike_slab</span>(<span class="at">pi =</span> <span class="fl">0.1</span>, <span class="at">learn_pi =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>  <span class="at">chains  =</span> <span class="dv">4</span><span class="dt">L</span>, <span class="at">iter =</span> <span class="dv">2000</span><span class="dt">L</span>, <span class="at">warmup =</span> <span class="dv">1000</span><span class="dt">L</span>, <span class="at">seed =</span> <span class="dv">42</span><span class="dt">L</span></span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a>)</span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a></span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a><span class="co"># Posterior inclusion probabilities per breakpoint</span></span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a><span class="fu">pip</span>(fit_ss)</span>
+<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a><span class="co">#&gt; gamma_delta1_(Intercept) gamma_delta2_(Intercept) gamma_delta3_(Intercept)</span></span>
+<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a><span class="co">#&gt;                    0.987                    0.063                    0.041</span></span></code></pre></div>
+<p>A PIP near 1 indicates that breakpoint is supported by the data; a
+low PIP indicates the slope change is not needed.</p>
+<p>See <code>vignette(&quot;spike-and-slab&quot;)</code> for a full tutorial.</p>
+<hr />
+</div>
+<div id="hypothesis-tests-and-evidence-ratios" class="section level2">
+<h2>Hypothesis tests and evidence ratios</h2>
+<p><code>hypothesis()</code> evaluates directional hypotheses against
+the posterior draws.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="co"># Is the slope change at breakpoint 1 positive?</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>smoothbp<span class="sc">::</span><span class="fu">hypothesis</span>(fit1, <span class="st">&quot;delta1_(Intercept) &gt; 0&quot;</span>)</span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a><span class="co"># Complex linear hypothesis: is the final slope (b1 + delta1) negative?</span></span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>smoothbp<span class="sc">::</span><span class="fu">hypothesis</span>(fit1, <span class="st">&quot;b1_(Intercept) + delta1_(Intercept) &lt; 0&quot;</span>)</span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a><span class="co"># Does the change-point fall before time 4?</span></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>smoothbp<span class="sc">::</span><span class="fu">hypothesis</span>(fit1, <span class="st">&quot;omega1_(Intercept) &lt; 4&quot;</span>)</span></code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th>Stars</th>
+<th>ER</th>
+<th><span class="math inline">\(P(H)\)</span></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>***</code></td>
+<td>&gt; 99</td>
+<td>&gt; 0.99</td>
+</tr>
+<tr class="even">
+<td><code>**</code></td>
+<td>&gt; 19</td>
+<td>&gt; 0.95</td>
+</tr>
+<tr class="odd">
+<td><code>*</code></td>
+<td>&gt; 3</td>
+<td>&gt; 0.75</td>
+</tr>
+</tbody>
+</table>
+<hr />
+</div>
+<div id="model-comparison" class="section level2">
+<h2>Model comparison</h2>
+<div id="leave-one-out-cross-validation-loo-ic" class="section level3">
+<h3>Leave-one-out cross-validation (LOO-IC)</h3>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="co"># Compare 0-BP (linear) vs 1-BP vs 3-BP models</span></span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a>loo0 <span class="ot">&lt;-</span> <span class="fu">loo</span>(fit0)</span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>loo1 <span class="ot">&lt;-</span> <span class="fu">loo</span>(fit1)</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>loo3 <span class="ot">&lt;-</span> <span class="fu">loo</span>(fit3)</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a></span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>loo<span class="sc">::</span><span class="fu">loo_compare</span>(loo0, loo1, loo3)</span></code></pre></div>
+</div>
+<div id="bayes-factors-via-bridge-sampling" class="section level3">
+<h3>Bayes factors via bridge sampling</h3>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">library</span>(bridgesampling)</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>bs0 <span class="ot">&lt;-</span> <span class="fu">bridge_sampler</span>(fit0)</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>bs1 <span class="ot">&lt;-</span> <span class="fu">bridge_sampler</span>(fit1)</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a><span class="fu">bayes_factor</span>(bs1, bs0)</span></code></pre></div>
+<hr />
+</div>
+</div>
+<div id="extracting-results" class="section level2">
+<h2>Extracting results</h2>
+<div id="fitted-values" class="section level3">
+<h3>Fitted values</h3>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="co"># Posterior mean + 95% CI at training observations</span></span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a><span class="fu">fitted</span>(fit1)</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a></span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a><span class="co"># Full posterior draws matrix (n_draws × n_obs)</span></span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>draws_mat <span class="ot">&lt;-</span> <span class="fu">fitted</span>(fit1, <span class="at">summary =</span> <span class="cn">FALSE</span>)</span></code></pre></div>
+</div>
+<div id="working-with-posterior-draws" class="section level3">
+<h3>Working with <code>posterior</code> draws</h3>
+<p>The <code>$draws</code> component of a <code>smoothbp</code> fit is a
+standard <code>draws_array</code> object from the <code>posterior</code>
+package. You can use any of the <code>posterior</code> tools to
+manipulate and summarize the draws.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="fu">library</span>(posterior)</span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a></span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a><span class="co"># Convert to a data frame for use with ggplot2</span></span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a>draws_df <span class="ot">&lt;-</span> <span class="fu">as_draws_df</span>(fit1<span class="sc">$</span>draws)</span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a></span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a><span class="co"># Extract a specific parameter</span></span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a>b1_draws <span class="ot">&lt;-</span> draws_df<span class="sc">$</span><span class="st">`</span><span class="at">b1_(Intercept)</span><span class="st">`</span></span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a></span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a><span class="co"># Compute custom summaries</span></span>
+<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a><span class="fu">summarise_draws</span>(fit1<span class="sc">$</span>draws, <span class="st">&quot;mean&quot;</span>, <span class="st">&quot;sd&quot;</span>, <span class="sc">~</span><span class="fu">quantile</span>(.x, <span class="fu">c</span>(<span class="fl">0.1</span>, <span class="fl">0.9</span>)))</span></code></pre></div>
+</div>
+<div id="marginal-predictions" class="section level3">
+<h3>Marginal predictions</h3>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a><span class="co"># Population-level predictions at new time points</span></span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a>newdata_marginal <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">tau =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">6</span>, <span class="at">by =</span> <span class="fl">0.1</span>))</span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a><span class="fu">fitted</span>(fit1, <span class="at">newdata =</span> newdata_marginal)</span></code></pre></div>
+</div>
+<div id="conditional-predictions" class="section level3">
+<h3>Conditional predictions</h3>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="co"># Subject-specific predictions</span></span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a><span class="fu">fitted</span>(fit1, <span class="at">newdata =</span> <span class="fu">data.frame</span>(<span class="at">tau =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">6</span>, <span class="at">by =</span> <span class="fl">0.1</span>), <span class="at">subject =</span> <span class="st">&quot;1&quot;</span>))</span></code></pre></div>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

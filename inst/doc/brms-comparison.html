@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+
+<title>Validating smoothbp against brms and mcp</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Validating smoothbp against brms and
+mcp</h1>
+
+
+
+<div id="why-this-vignette-exists" class="section level2">
+<h2>Why this vignette exists</h2>
+<p><code>smoothbp</code> is a bespoke Metropolis-within-Gibbs sampler
+for Bayesian hierarchical piecewise regression with
+<strong>multiple</strong> logistic-smoothed change-points. The recovery
+tests are a self-consistency check — simulator and likelihood share the
+same code path. To trust the package one also wants to see that it
+agrees with an independent implementation. <code>brms</code> (via Stan)
+is the natural reference for fitting the same generative model via NUTS
+on a custom non-linear formula. <code>mcp</code> (via JAGS) is the
+closest specialist competitor and provides a complementary perspective:
+it fits <strong>hard</strong> (sharp) change-points rather than the
+logistic-smoothed transition that <code>smoothbp</code> uses.</p>
+<p>Four scenarios are compared below:</p>
+<ol style="list-style-type: decimal">
+<li><strong>Intercept-only</strong> — all parameters are scalar (the
+baseline case). Compared against <strong>brms</strong>.</li>
+<li><strong>Covariate on omega</strong> —
+<code>omega ~ 1 + treatment</code>. Compared against
+<strong>brms</strong>.</li>
+<li><strong>Hard vs smooth change-point</strong> — single change-point,
+fixed effects only. Compared against <strong>mcp</strong>.</li>
+<li><strong>Multi-breakpoint</strong> — two true change-points; smoothbp
+vs brms, showing overlapping posterior distributions.</li>
+</ol>
+<div id="one-important-practical-note-before-we-start" class="section level3">
+<h3>One important practical note before we start</h3>
+<p>When the change-point parameter <code>omega</code> drifts outside the
+range of the time variable, the smoothing term collapses and
+<code>delta1</code> becomes effectively unidentified. NUTS chains that
+initialise in that region can get stuck there for the entire run,
+producing an artificially multimodal posterior that has nothing to do
+with the data. The clean fix is to bound <code>omega</code> above at
+<code>max(tau)</code> in both samplers, and to initialise brms chains
+near the prior mean (which is what smoothbp does internally). Both fixes
+applied below.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(smoothbp)</span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">library</span>(posterior)</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="fu">library</span>(tidyr)</span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>have_brms <span class="ot">&lt;-</span> <span class="fu">requireNamespace</span>(<span class="st">&quot;brms&quot;</span>, <span class="at">quietly =</span> <span class="cn">TRUE</span>) <span class="sc">&amp;&amp;</span> NOT_CRAN</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span>have_brms <span class="sc">&amp;&amp;</span> NOT_CRAN) {</span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>  <span class="fu">message</span>(<span class="st">&quot;brms not installed -- install.packages(&#39;brms&#39;) to render the comparison.&quot;</span>)</span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>}</span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a>have_mcp <span class="ot">&lt;-</span> <span class="fu">requireNamespace</span>(<span class="st">&quot;mcp&quot;</span>,   <span class="at">quietly =</span> <span class="cn">TRUE</span>) <span class="sc">&amp;&amp;</span></span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a>            <span class="fu">requireNamespace</span>(<span class="st">&quot;rjags&quot;</span>, <span class="at">quietly =</span> <span class="cn">TRUE</span>) <span class="sc">&amp;&amp;</span> NOT_CRAN</span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="cf">if</span> (<span class="sc">!</span>have_mcp <span class="sc">&amp;&amp;</span> NOT_CRAN) {</span>
+<span id="cb1-15"><a href="#cb1-15" tabindex="-1"></a>  <span class="fu">message</span>(<span class="st">&quot;mcp or rjags not installed -- install JAGS then install.packages(&#39;mcp&#39;) &quot;</span>,</span>
+<span id="cb1-16"><a href="#cb1-16" tabindex="-1"></a>          <span class="st">&quot;to render the mcp comparison.&quot;</span>)</span>
+<span id="cb1-17"><a href="#cb1-17" tabindex="-1"></a>}</span></code></pre></div>
+<hr />
+</div>
+</div>
+<div id="scenario-1-intercept-only-model" class="section level1">
+<h1>Scenario 1: Intercept-only model</h1>
+<div id="simulate-one-dataset" class="section level2">
+<h2>Simulate one dataset</h2>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">31</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>dat <span class="ot">&lt;-</span> <span class="fu">simulate_smoothbp</span>(</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="at">n_subj =</span> <span class="dv">25</span>, <span class="at">n_obs =</span> <span class="dv">10</span>,</span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="at">b0 =</span> <span class="fl">5.0</span>, <span class="at">b1 =</span> <span class="sc">-</span><span class="fl">0.4</span>, <span class="at">b2 =</span> <span class="fl">1.4</span>,</span>
+<span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a>  <span class="at">omega =</span> <span class="fl">3.2</span>, <span class="at">rho =</span> <span class="fl">4.0</span>,</span>
+<span id="cb2-6"><a href="#cb2-6" tabindex="-1"></a>  <span class="at">sigma =</span> <span class="fl">0.4</span>, <span class="at">sigma_u =</span> <span class="fl">0.7</span>,</span>
+<span id="cb2-7"><a href="#cb2-7" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">31</span><span class="dt">L</span></span>
+<span id="cb2-8"><a href="#cb2-8" tabindex="-1"></a>)</span>
+<span id="cb2-9"><a href="#cb2-9" tabindex="-1"></a><span class="fu">true_params</span>(dat)</span></code></pre></div>
+</div>
+<div id="fit-with-smoothbp" class="section level2">
+<h2>Fit with smoothbp</h2>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a>t0 <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>fit_sbp <span class="ot">&lt;-</span> <span class="fu">smoothbp</span>(</span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="at">formula =</span> y <span class="sc">~</span> tau,</span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="at">b0      =</span> <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> subject),</span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="at">b1      =</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  <span class="at">deltas  =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span>),</span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="at">omega   =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span>),</span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a>  <span class="at">rho     =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span>),</span>
+<span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a>  <span class="at">data    =</span> dat,</span>
+<span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a>  <span class="at">priors  =</span> <span class="fu">smoothbp_priors</span>(</span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a>    <span class="at">b0      =</span> <span class="fu">prior_normal</span>(<span class="dv">0</span>, <span class="dv">10</span>),</span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a>    <span class="at">b1      =</span> <span class="fu">prior_normal</span>(<span class="dv">0</span>, <span class="dv">2</span>),</span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a>    <span class="at">omega   =</span> <span class="fu">list</span>(<span class="fu">prior_normal</span>(<span class="dv">3</span>, <span class="dv">2</span>, <span class="at">lb =</span> <span class="dv">0</span>, <span class="at">ub =</span> <span class="fu">max</span>(dat<span class="sc">$</span>tau))),</span>
+<span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a>    <span class="at">rho     =</span> <span class="fu">list</span>(<span class="fu">prior_normal</span>(<span class="dv">3</span>, <span class="dv">2</span>, <span class="at">lb =</span> <span class="dv">0</span>))</span>
+<span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a>  ),</span>
+<span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a>  <span class="at">chains  =</span> <span class="dv">4</span><span class="dt">L</span>, <span class="at">iter =</span> <span class="dv">2000</span><span class="dt">L</span>, <span class="at">warmup =</span> <span class="dv">1000</span><span class="dt">L</span>,</span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a>  <span class="at">seed    =</span> <span class="dv">31</span><span class="dt">L</span>, <span class="at">.verbose =</span> <span class="cn">FALSE</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a>)</span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a>time_sbp <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">difftime</span>(<span class="fu">Sys.time</span>(), t0, <span class="at">units =</span> <span class="st">&quot;secs&quot;</span>))</span></code></pre></div>
+</div>
+<div id="fit-with-brms-stan-nuts" class="section level2">
+<h2>Fit with brms (Stan / NUTS)</h2>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">suppressPackageStartupMessages</span>(<span class="fu">library</span>(brms))</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>bf_smoothed <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">bf</span>(</span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  y <span class="sc">~</span> b0 <span class="sc">+</span> b1 <span class="sc">*</span> (tau <span class="sc">-</span> omega) <span class="sc">+</span></span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>        b2 <span class="sc">*</span> (tau <span class="sc">-</span> omega) <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> <span class="fu">exp</span>(<span class="sc">-</span>(tau <span class="sc">-</span> omega) <span class="sc">*</span> rho)),</span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>  b0 <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> subject),</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  b1 <span class="sc">~</span> <span class="dv">1</span>, b2 <span class="sc">~</span> <span class="dv">1</span>, omega <span class="sc">~</span> <span class="dv">1</span>, rho <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  <span class="at">nl =</span> <span class="cn">TRUE</span></span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>)</span>
+<span id="cb4-10"><a href="#cb4-10" tabindex="-1"></a></span>
+<span id="cb4-11"><a href="#cb4-11" tabindex="-1"></a><span class="co"># brms::prior() captures arguments by non-standard evaluation, so</span></span>
+<span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co"># `ub = max(dat$tau)` would be embedded literally in the generated Stan</span></span>
+<span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co"># code. Pre-compute the value and pass it via prior_string() which uses</span></span>
+<span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co"># standard evaluation and accepts numeric bounds.</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a>ub_omega <span class="ot">&lt;-</span> <span class="fu">max</span>(dat<span class="sc">$</span>tau)</span>
+<span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a></span>
+<span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a>priors_brms <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a>  brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">10</span>), <span class="at">nlpar =</span> <span class="st">&quot;b0&quot;</span>),</span>
+<span id="cb4-19"><a href="#cb4-19" tabindex="-1"></a>  brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">2</span>),  <span class="at">nlpar =</span> <span class="st">&quot;b1&quot;</span>),</span>
+<span id="cb4-20"><a href="#cb4-20" tabindex="-1"></a>  brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">2</span>),  <span class="at">nlpar =</span> <span class="st">&quot;b2&quot;</span>),</span>
+<span id="cb4-21"><a href="#cb4-21" tabindex="-1"></a>  brms<span class="sc">::</span><span class="fu">prior_string</span>(<span class="st">&quot;normal(3, 2)&quot;</span>, <span class="at">nlpar =</span> <span class="st">&quot;omega&quot;</span>,</span>
+<span id="cb4-22"><a href="#cb4-22" tabindex="-1"></a>                     <span class="at">lb =</span> <span class="dv">0</span>, <span class="at">ub =</span> ub_omega),</span>
+<span id="cb4-23"><a href="#cb4-23" tabindex="-1"></a>  brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">3</span>, <span class="dv">2</span>),  <span class="at">nlpar =</span> <span class="st">&quot;rho&quot;</span>,   <span class="at">lb =</span> <span class="dv">0</span>)</span>
+<span id="cb4-24"><a href="#cb4-24" tabindex="-1"></a>)</span>
+<span id="cb4-25"><a href="#cb4-25" tabindex="-1"></a></span>
+<span id="cb4-26"><a href="#cb4-26" tabindex="-1"></a><span class="co"># Initialise every chain near the prior mean.  Without this, Stan&#39;s default</span></span>
+<span id="cb4-27"><a href="#cb4-27" tabindex="-1"></a><span class="co"># uniform-on-(-2, 2) initialisation lands some chains in the unidentifiable</span></span>
+<span id="cb4-28"><a href="#cb4-28" tabindex="-1"></a><span class="co"># omega &gt; max(tau) trap and they never escape.</span></span>
+<span id="cb4-29"><a href="#cb4-29" tabindex="-1"></a>init_fun <span class="ot">&lt;-</span> <span class="cf">function</span>() <span class="fu">list</span>(</span>
+<span id="cb4-30"><a href="#cb4-30" tabindex="-1"></a>  <span class="at">b_b0    =</span> <span class="fu">array</span>(<span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="dv">5</span>, <span class="dv">1</span>)),</span>
+<span id="cb4-31"><a href="#cb4-31" tabindex="-1"></a>  <span class="at">b_b1    =</span> <span class="fu">array</span>(<span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="fl">0.3</span>)),</span>
+<span id="cb4-32"><a href="#cb4-32" tabindex="-1"></a>  <span class="at">b_b2    =</span> <span class="fu">array</span>(<span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="fl">0.3</span>)),</span>
+<span id="cb4-33"><a href="#cb4-33" tabindex="-1"></a>  <span class="at">b_omega =</span> <span class="fu">array</span>(<span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="dv">3</span>, <span class="fl">0.3</span>)),</span>
+<span id="cb4-34"><a href="#cb4-34" tabindex="-1"></a>  <span class="at">b_rho   =</span> <span class="fu">array</span>(<span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="dv">3</span>, <span class="fl">0.5</span>))</span>
+<span id="cb4-35"><a href="#cb4-35" tabindex="-1"></a>)</span>
+<span id="cb4-36"><a href="#cb4-36" tabindex="-1"></a></span>
+<span id="cb4-37"><a href="#cb4-37" tabindex="-1"></a>t0 <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb4-38"><a href="#cb4-38" tabindex="-1"></a>fit_brms <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">brm</span>(</span>
+<span id="cb4-39"><a href="#cb4-39" tabindex="-1"></a>  bf_smoothed,</span>
+<span id="cb4-40"><a href="#cb4-40" tabindex="-1"></a>  <span class="at">data    =</span> dat,</span>
+<span id="cb4-41"><a href="#cb4-41" tabindex="-1"></a>  <span class="at">prior   =</span> priors_brms,</span>
+<span id="cb4-42"><a href="#cb4-42" tabindex="-1"></a>  <span class="at">chains  =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">2000</span>, <span class="at">warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb4-43"><a href="#cb4-43" tabindex="-1"></a>  <span class="at">seed    =</span> <span class="dv">31</span>, <span class="at">refresh =</span> <span class="dv">0</span>,</span>
+<span id="cb4-44"><a href="#cb4-44" tabindex="-1"></a>  <span class="at">init    =</span> init_fun,</span>
+<span id="cb4-45"><a href="#cb4-45" tabindex="-1"></a>  <span class="at">control =</span> <span class="fu">list</span>(<span class="at">adapt_delta =</span> <span class="fl">0.95</span>)</span>
+<span id="cb4-46"><a href="#cb4-46" tabindex="-1"></a>)</span>
+<span id="cb4-47"><a href="#cb4-47" tabindex="-1"></a>time_brms <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">difftime</span>(<span class="fu">Sys.time</span>(), t0, <span class="at">units =</span> <span class="st">&quot;secs&quot;</span>))</span></code></pre></div>
+</div>
+<div id="did-brms-converge" class="section level2">
+<h2>Did brms converge?</h2>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>sbp_names <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>  <span class="st">&quot;b0_(Intercept)&quot;</span>, <span class="st">&quot;b1_(Intercept)&quot;</span>, <span class="st">&quot;delta1_(Intercept)&quot;</span>,</span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  <span class="st">&quot;omega1_(Intercept)&quot;</span>, <span class="st">&quot;rho1_(Intercept)&quot;</span>,</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="st">&quot;sigma&quot;</span>, <span class="st">&quot;sigma_u&quot;</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>)</span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>brms_names <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>  <span class="st">&quot;b_b0_Intercept&quot;</span>, <span class="st">&quot;b_b1_Intercept&quot;</span>, <span class="st">&quot;b_b2_Intercept&quot;</span>,</span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a>  <span class="st">&quot;b_omega_Intercept&quot;</span>, <span class="st">&quot;b_rho_Intercept&quot;</span>,</span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a>  <span class="st">&quot;sigma&quot;</span>, <span class="st">&quot;sd_subject__b0_Intercept&quot;</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a>)</span>
+<span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a></span>
+<span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a>posterior<span class="sc">::</span><span class="fu">summarise_draws</span>(</span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a>  posterior<span class="sc">::</span><span class="fu">as_draws_df</span>(fit_brms), rhat, ess_bulk</span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a>) <span class="sc">%&gt;%</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(variable <span class="sc">%in%</span> brms_names) <span class="sc">%&gt;%</span></span>
+<span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">transmute</span>(<span class="at">parameter =</span> sbp_names[<span class="fu">match</span>(variable, brms_names)],</span>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a>                   rhat, ess_bulk) <span class="sc">%&gt;%</span></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">3</span>,</span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a>               <span class="at">caption =</span> <span class="st">&quot;brms convergence on population-level parameters.&quot;</span>)</span></code></pre></div>
+<p>If any <code>rhat</code> exceeds 1.05, brms has not mixed and the
+comparison below is contaminated; do not interpret disagreements as
+smoothbp errors. With the bounded <code>omega</code> prior and the
+seeded <code>init_fun</code>, all four chains should land in the same
+basin.</p>
+</div>
+<div id="compare-posterior-summaries" class="section level2">
+<h2>Compare posterior summaries</h2>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a>sbp_draws  <span class="ot">&lt;-</span> posterior<span class="sc">::</span><span class="fu">as_draws_df</span>(fit_sbp<span class="sc">$</span>draws)[, sbp_names]</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>brms_draws <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(posterior<span class="sc">::</span><span class="fu">as_draws_df</span>(fit_brms))[, brms_names]</span>
+<span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a><span class="fu">colnames</span>(brms_draws) <span class="ot">&lt;-</span> sbp_names</span>
+<span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>draws_long <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(</span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(sbp_draws,  <span class="at">cols =</span> dplyr<span class="sc">::</span><span class="fu">everything</span>(),</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>                      <span class="at">names_to =</span> <span class="st">&quot;parameter&quot;</span>, <span class="at">values_to =</span> <span class="st">&quot;value&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">package =</span> <span class="st">&quot;smoothbp&quot;</span>),</span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(brms_draws, <span class="at">cols =</span> dplyr<span class="sc">::</span><span class="fu">everything</span>(),</span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a>                      <span class="at">names_to =</span> <span class="st">&quot;parameter&quot;</span>, <span class="at">values_to =</span> <span class="st">&quot;value&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">package =</span> <span class="st">&quot;brms&quot;</span>)</span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a>)</span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a>draws_long <span class="sc">%&gt;%</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(parameter, package) <span class="sc">%&gt;%</span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">summarise</span>(</span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a>    <span class="at">mean =</span> <span class="fu">mean</span>(value),</span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a>    <span class="at">sd   =</span> <span class="fu">sd</span>(value),</span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a>    <span class="at">q025 =</span> <span class="fu">quantile</span>(value, <span class="fl">0.025</span>),</span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a>    <span class="at">q975 =</span> <span class="fu">quantile</span>(value, <span class="fl">0.975</span>),</span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_wider</span>(</span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a>    <span class="at">names_from  =</span> package,</span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a>    <span class="at">values_from =</span> <span class="fu">c</span>(mean, sd, q025, q975),</span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a>    <span class="at">names_glue  =</span> <span class="st">&quot;{package}_{.value}&quot;</span></span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a>    <span class="at">delta_mean_pct =</span> <span class="dv">100</span> <span class="sc">*</span> <span class="fu">abs</span>(smoothbp_mean <span class="sc">-</span> brms_mean) <span class="sc">/</span></span>
+<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a>                       (<span class="fu">abs</span>(brms_mean) <span class="sc">+</span> <span class="fl">1e-8</span>)</span>
+<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">3</span>,</span>
+<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a>               <span class="at">caption =</span> <span class="st">&quot;Posterior summaries for both packages.&quot;</span>)</span></code></pre></div>
+</div>
+<div id="overlaid-marginal-posteriors" class="section level2">
+<h2>Overlaid marginal posteriors</h2>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">ggplot</span>(draws_long, <span class="fu">aes</span>(<span class="at">x =</span> value, <span class="at">fill =</span> package, <span class="at">colour =</span> package)) <span class="sc">+</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="at">alpha =</span> <span class="fl">0.35</span>) <span class="sc">+</span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> parameter, <span class="at">scales =</span> <span class="st">&quot;free&quot;</span>, <span class="at">ncol =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values  =</span> <span class="fu">c</span>(<span class="at">smoothbp =</span> <span class="st">&quot;#1f77b4&quot;</span>, <span class="at">brms =</span> <span class="st">&quot;#d62728&quot;</span>)) <span class="sc">+</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="fu">scale_colour_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="at">smoothbp =</span> <span class="st">&quot;#1f77b4&quot;</span>, <span class="at">brms =</span> <span class="st">&quot;#d62728&quot;</span>)) <span class="sc">+</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>    <span class="at">title    =</span> <span class="st">&quot;Marginal posteriors: smoothbp vs brms&quot;</span>,</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="fu">sprintf</span>(</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a>      <span class="st">&quot;Same simulated data, same priors. smoothbp: %.1fs   brms: %.1fs&quot;</span>,</span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a>      time_sbp, time_brms</span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a>    ),</span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a>    <span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">&quot;density&quot;</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">11</span>) <span class="sc">+</span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)</span></code></pre></div>
+</div>
+<div id="effective-sample-size-per-second" class="section level2">
+<h2>Effective sample size per second</h2>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a>ess_sbp  <span class="ot">&lt;-</span> posterior<span class="sc">::</span><span class="fu">summarise_draws</span>(fit_sbp<span class="sc">$</span>draws, ess_bulk) <span class="sc">%&gt;%</span></span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(variable <span class="sc">%in%</span> sbp_names) <span class="sc">%&gt;%</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">transmute</span>(<span class="at">parameter =</span> variable,</span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a>                   <span class="at">smoothbp_ess_per_sec =</span> ess_bulk <span class="sc">/</span> time_sbp)</span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a>ess_brms <span class="ot">&lt;-</span> posterior<span class="sc">::</span><span class="fu">summarise_draws</span>(</span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a>  posterior<span class="sc">::</span><span class="fu">as_draws_df</span>(fit_brms), ess_bulk</span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a>) <span class="sc">%&gt;%</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(variable <span class="sc">%in%</span> brms_names) <span class="sc">%&gt;%</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">parameter =</span> sbp_names[<span class="fu">match</span>(variable, brms_names)]) <span class="sc">%&gt;%</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">transmute</span>(parameter, <span class="at">brms_ess_per_sec =</span> ess_bulk <span class="sc">/</span> time_brms)</span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a>dplyr<span class="sc">::</span><span class="fu">full_join</span>(ess_sbp, ess_brms, <span class="at">by =</span> <span class="st">&quot;parameter&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">1</span>,</span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a>               <span class="at">caption =</span> <span class="st">&quot;Bulk ESS / second by package and parameter.&quot;</span>)</span></code></pre></div>
+<hr />
+</div>
+</div>
+<div id="scenario-2-covariate-on-omega" class="section level1">
+<h1>Scenario 2: Covariate on omega</h1>
+<p>This scenario exercises the <strong>HMC-within-Gibbs</strong> sampler
+path that is activated when a non-linear parameter (<code>omega</code>
+or <code>rho</code>) has two or more coefficients. Here
+<code>omega ~ 1 + treatment</code> gives a group-specific change-point
+location.</p>
+<div id="simulate-data-with-treatment-effect-on-omega" class="section level2">
+<h2>Simulate data with treatment effect on omega</h2>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">8147</span>)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>n_subj   <span class="ot">&lt;-</span> <span class="dv">30</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a>n_obs    <span class="ot">&lt;-</span> <span class="dv">10</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a>tau_range <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">6</span>)</span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a>b0_true      <span class="ot">&lt;-</span> <span class="fl">5.0</span></span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a>b1_true      <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">0.4</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a>delta_true   <span class="ot">&lt;-</span> <span class="fl">1.4</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a>omega_int    <span class="ot">&lt;-</span> <span class="fl">3.2</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a>omega_trt    <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">0.8</span></span>
+<span id="cb9-12"><a href="#cb9-12" tabindex="-1"></a>rho_true     <span class="ot">&lt;-</span> <span class="fl">4.0</span></span>
+<span id="cb9-13"><a href="#cb9-13" tabindex="-1"></a>sigma_true   <span class="ot">&lt;-</span> <span class="fl">0.4</span></span>
+<span id="cb9-14"><a href="#cb9-14" tabindex="-1"></a>sigma_u_true <span class="ot">&lt;-</span> <span class="fl">0.7</span></span>
+<span id="cb9-15"><a href="#cb9-15" tabindex="-1"></a></span>
+<span id="cb9-16"><a href="#cb9-16" tabindex="-1"></a>treatment <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">each =</span> n_subj <span class="sc">/</span> <span class="dv">2</span>)</span>
+<span id="cb9-17"><a href="#cb9-17" tabindex="-1"></a>u_j <span class="ot">&lt;-</span> <span class="fu">rnorm</span>(n_subj, <span class="dv">0</span>, sigma_u_true)</span>
+<span id="cb9-18"><a href="#cb9-18" tabindex="-1"></a>.sigmoid <span class="ot">&lt;-</span> <span class="cf">function</span>(x) <span class="dv">1</span> <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> <span class="fu">exp</span>(<span class="sc">-</span>x))</span>
+<span id="cb9-19"><a href="#cb9-19" tabindex="-1"></a></span>
+<span id="cb9-20"><a href="#cb9-20" tabindex="-1"></a>rows <span class="ot">&lt;-</span> <span class="fu">vector</span>(<span class="st">&quot;list&quot;</span>, n_subj)</span>
+<span id="cb9-21"><a href="#cb9-21" tabindex="-1"></a><span class="cf">for</span> (j <span class="cf">in</span> <span class="fu">seq_len</span>(n_subj)) {</span>
+<span id="cb9-22"><a href="#cb9-22" tabindex="-1"></a>  tau_j   <span class="ot">&lt;-</span> <span class="fu">seq</span>(tau_range[<span class="dv">1</span>], tau_range[<span class="dv">2</span>], <span class="at">length.out =</span> n_obs)</span>
+<span id="cb9-23"><a href="#cb9-23" tabindex="-1"></a>  omega_j <span class="ot">&lt;-</span> omega_int <span class="sc">+</span> omega_trt <span class="sc">*</span> treatment[j]</span>
+<span id="cb9-24"><a href="#cb9-24" tabindex="-1"></a>  d_j     <span class="ot">&lt;-</span> tau_j <span class="sc">-</span> omega_j</span>
+<span id="cb9-25"><a href="#cb9-25" tabindex="-1"></a>  s_j     <span class="ot">&lt;-</span> <span class="fu">.sigmoid</span>(d_j <span class="sc">*</span> rho_true)</span>
+<span id="cb9-26"><a href="#cb9-26" tabindex="-1"></a>  mu_j    <span class="ot">&lt;-</span> (b0_true <span class="sc">+</span> u_j[j]) <span class="sc">+</span> b1_true <span class="sc">*</span> d_j <span class="sc">+</span> delta_true <span class="sc">*</span> d_j <span class="sc">*</span> s_j</span>
+<span id="cb9-27"><a href="#cb9-27" tabindex="-1"></a>  rows[[j]] <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb9-28"><a href="#cb9-28" tabindex="-1"></a>    <span class="at">subject   =</span> <span class="fu">factor</span>(j),</span>
+<span id="cb9-29"><a href="#cb9-29" tabindex="-1"></a>    <span class="at">tau       =</span> tau_j,</span>
+<span id="cb9-30"><a href="#cb9-30" tabindex="-1"></a>    <span class="at">treatment =</span> treatment[j],</span>
+<span id="cb9-31"><a href="#cb9-31" tabindex="-1"></a>    <span class="at">y         =</span> mu_j <span class="sc">+</span> <span class="fu">rnorm</span>(n_obs, <span class="dv">0</span>, sigma_true)</span>
+<span id="cb9-32"><a href="#cb9-32" tabindex="-1"></a>  )</span>
+<span id="cb9-33"><a href="#cb9-33" tabindex="-1"></a>}</span>
+<span id="cb9-34"><a href="#cb9-34" tabindex="-1"></a>dat_cov <span class="ot">&lt;-</span> <span class="fu">do.call</span>(rbind, rows)</span>
+<span id="cb9-35"><a href="#cb9-35" tabindex="-1"></a></span>
+<span id="cb9-36"><a href="#cb9-36" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;True omega: intercept = %.1f, treatment effect = %.1f</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb9-37"><a href="#cb9-37" tabindex="-1"></a>            omega_int, omega_trt))</span>
+<span id="cb9-38"><a href="#cb9-38" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;  Control  (treatment = 0): omega = %.1f</span><span class="sc">\n</span><span class="st">&quot;</span>, omega_int))</span>
+<span id="cb9-39"><a href="#cb9-39" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;  Treated  (treatment = 1): omega = %.1f</span><span class="sc">\n</span><span class="st">&quot;</span>, omega_int <span class="sc">+</span> omega_trt))</span></code></pre></div>
+</div>
+<div id="fit-with-smoothbp-1" class="section level2">
+<h2>Fit with smoothbp</h2>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a>t0 <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>fit_sbp_cov <span class="ot">&lt;-</span> <span class="fu">smoothbp</span>(</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="at">formula =</span> y <span class="sc">~</span> tau,</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>  <span class="at">b0      =</span> <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> subject),</span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="at">b1      =</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  <span class="at">deltas  =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span>),</span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  <span class="at">omega   =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> treatment),</span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>  <span class="at">rho     =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span>),</span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>  <span class="at">data    =</span> dat_cov,</span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>  <span class="at">priors  =</span> <span class="fu">smoothbp_priors</span>(</span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>    <span class="at">b0    =</span> <span class="fu">prior_normal</span>(<span class="dv">0</span>, <span class="dv">10</span>),</span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a>    <span class="at">b1    =</span> <span class="fu">prior_normal</span>(<span class="dv">0</span>, <span class="dv">2</span>),</span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a>    <span class="at">omega =</span> <span class="fu">list</span>(<span class="fu">list</span>(</span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a>      <span class="st">&quot;(Intercept)&quot;</span> <span class="ot">=</span> <span class="fu">prior_normal</span>(<span class="dv">3</span>, <span class="dv">2</span>, <span class="at">lb =</span> <span class="dv">0</span>, <span class="at">ub =</span> <span class="fu">max</span>(dat_cov<span class="sc">$</span>tau)),</span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a>      <span class="st">&quot;treatment&quot;</span>   <span class="ot">=</span> <span class="fu">prior_normal</span>(<span class="dv">0</span>, <span class="dv">2</span>)</span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a>    )),</span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a>    <span class="at">rho   =</span> <span class="fu">list</span>(<span class="fu">prior_normal</span>(<span class="dv">3</span>, <span class="dv">2</span>, <span class="at">lb =</span> <span class="dv">0</span>))</span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a>  ),</span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a>  <span class="at">chains  =</span> <span class="dv">4</span><span class="dt">L</span>, <span class="at">iter =</span> <span class="dv">2000</span><span class="dt">L</span>, <span class="at">warmup =</span> <span class="dv">1000</span><span class="dt">L</span>,</span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a>  <span class="at">seed    =</span> <span class="dv">8147</span><span class="dt">L</span>, <span class="at">.verbose =</span> <span class="cn">FALSE</span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a>)</span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a>time_sbp_cov <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">difftime</span>(<span class="fu">Sys.time</span>(), t0, <span class="at">units =</span> <span class="st">&quot;secs&quot;</span>))</span></code></pre></div>
+</div>
+<div id="fit-with-brms" class="section level2">
+<h2>Fit with brms</h2>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a>bf_cov <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">bf</span>(</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>  y <span class="sc">~</span> b0 <span class="sc">+</span> b1 <span class="sc">*</span> (tau <span class="sc">-</span> omega) <span class="sc">+</span></span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>        b2 <span class="sc">*</span> (tau <span class="sc">-</span> omega) <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> <span class="fu">exp</span>(<span class="sc">-</span>(tau <span class="sc">-</span> omega) <span class="sc">*</span> rho)),</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>  b0    <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> subject),</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>  b1    <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb11-6"><a href="#cb11-6" tabindex="-1"></a>  b2    <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb11-7"><a href="#cb11-7" tabindex="-1"></a>  omega <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> treatment,</span>
+<span id="cb11-8"><a href="#cb11-8" tabindex="-1"></a>  rho   <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb11-9"><a href="#cb11-9" tabindex="-1"></a>  <span class="at">nl =</span> <span class="cn">TRUE</span></span>
+<span id="cb11-10"><a href="#cb11-10" tabindex="-1"></a>)</span>
+<span id="cb11-11"><a href="#cb11-11" tabindex="-1"></a></span>
+<span id="cb11-12"><a href="#cb11-12" tabindex="-1"></a>priors_brms_cov <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb11-13"><a href="#cb11-13" tabindex="-1"></a>  brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">10</span>), <span class="at">nlpar =</span> <span class="st">&quot;b0&quot;</span>),</span>
+<span id="cb11-14"><a href="#cb11-14" tabindex="-1"></a>  brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">2</span>),  <span class="at">nlpar =</span> <span class="st">&quot;b1&quot;</span>),</span>
+<span id="cb11-15"><a href="#cb11-15" tabindex="-1"></a>  brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">2</span>),  <span class="at">nlpar =</span> <span class="st">&quot;b2&quot;</span>),</span>
+<span id="cb11-16"><a href="#cb11-16" tabindex="-1"></a>  brms<span class="sc">::</span><span class="fu">prior_string</span>(<span class="st">&quot;normal(3, 2)&quot;</span>, <span class="at">nlpar =</span> <span class="st">&quot;omega&quot;</span>, <span class="at">coef =</span> <span class="st">&quot;Intercept&quot;</span>),</span>
+<span id="cb11-17"><a href="#cb11-17" tabindex="-1"></a>  brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">2</span>),  <span class="at">nlpar =</span> <span class="st">&quot;omega&quot;</span>, <span class="at">coef =</span> <span class="st">&quot;treatment&quot;</span>),</span>
+<span id="cb11-18"><a href="#cb11-18" tabindex="-1"></a>  brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">3</span>, <span class="dv">2</span>),  <span class="at">nlpar =</span> <span class="st">&quot;rho&quot;</span>, <span class="at">lb =</span> <span class="dv">0</span>)</span>
+<span id="cb11-19"><a href="#cb11-19" tabindex="-1"></a>)</span>
+<span id="cb11-20"><a href="#cb11-20" tabindex="-1"></a></span>
+<span id="cb11-21"><a href="#cb11-21" tabindex="-1"></a>init_fun_cov <span class="ot">&lt;-</span> <span class="cf">function</span>() <span class="fu">list</span>(</span>
+<span id="cb11-22"><a href="#cb11-22" tabindex="-1"></a>  <span class="at">b_b0    =</span> <span class="fu">array</span>(<span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="dv">5</span>, <span class="dv">1</span>)),</span>
+<span id="cb11-23"><a href="#cb11-23" tabindex="-1"></a>  <span class="at">b_b1    =</span> <span class="fu">array</span>(<span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="fl">0.3</span>)),</span>
+<span id="cb11-24"><a href="#cb11-24" tabindex="-1"></a>  <span class="at">b_b2    =</span> <span class="fu">array</span>(<span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="dv">0</span>, <span class="fl">0.3</span>)),</span>
+<span id="cb11-25"><a href="#cb11-25" tabindex="-1"></a>  <span class="at">b_omega =</span> <span class="fu">array</span>(<span class="fu">c</span>(<span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="dv">3</span>, <span class="fl">0.3</span>), <span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="sc">-</span><span class="fl">0.5</span>, <span class="fl">0.3</span>))),</span>
+<span id="cb11-26"><a href="#cb11-26" tabindex="-1"></a>  <span class="at">b_rho   =</span> <span class="fu">array</span>(<span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="dv">3</span>, <span class="fl">0.5</span>))</span>
+<span id="cb11-27"><a href="#cb11-27" tabindex="-1"></a>)</span>
+<span id="cb11-28"><a href="#cb11-28" tabindex="-1"></a></span>
+<span id="cb11-29"><a href="#cb11-29" tabindex="-1"></a>t0 <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb11-30"><a href="#cb11-30" tabindex="-1"></a>fit_brms_cov <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">brm</span>(</span>
+<span id="cb11-31"><a href="#cb11-31" tabindex="-1"></a>  bf_cov,</span>
+<span id="cb11-32"><a href="#cb11-32" tabindex="-1"></a>  <span class="at">data    =</span> dat_cov,</span>
+<span id="cb11-33"><a href="#cb11-33" tabindex="-1"></a>  <span class="at">prior   =</span> priors_brms_cov,</span>
+<span id="cb11-34"><a href="#cb11-34" tabindex="-1"></a>  <span class="at">chains  =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">2000</span>, <span class="at">warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb11-35"><a href="#cb11-35" tabindex="-1"></a>  <span class="at">seed    =</span> <span class="dv">8147</span>, <span class="at">refresh =</span> <span class="dv">0</span>,</span>
+<span id="cb11-36"><a href="#cb11-36" tabindex="-1"></a>  <span class="at">init    =</span> init_fun_cov,</span>
+<span id="cb11-37"><a href="#cb11-37" tabindex="-1"></a>  <span class="at">control =</span> <span class="fu">list</span>(<span class="at">adapt_delta =</span> <span class="fl">0.95</span>)</span>
+<span id="cb11-38"><a href="#cb11-38" tabindex="-1"></a>)</span>
+<span id="cb11-39"><a href="#cb11-39" tabindex="-1"></a>time_brms_cov <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">difftime</span>(<span class="fu">Sys.time</span>(), t0, <span class="at">units =</span> <span class="st">&quot;secs&quot;</span>))</span></code></pre></div>
+</div>
+<div id="compare-posteriors" class="section level2">
+<h2>Compare posteriors</h2>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>sbp_names_cov <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>  <span class="st">&quot;b0_(Intercept)&quot;</span>, <span class="st">&quot;b1_(Intercept)&quot;</span>, <span class="st">&quot;delta1_(Intercept)&quot;</span>,</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  <span class="st">&quot;omega1_(Intercept)&quot;</span>, <span class="st">&quot;omega1_treatment&quot;</span>,</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  <span class="st">&quot;rho1_(Intercept)&quot;</span>, <span class="st">&quot;sigma&quot;</span>, <span class="st">&quot;sigma_u&quot;</span></span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>)</span>
+<span id="cb12-6"><a href="#cb12-6" tabindex="-1"></a>brms_names_cov <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb12-7"><a href="#cb12-7" tabindex="-1"></a>  <span class="st">&quot;b_b0_Intercept&quot;</span>, <span class="st">&quot;b_b1_Intercept&quot;</span>, <span class="st">&quot;b_b2_Intercept&quot;</span>,</span>
+<span id="cb12-8"><a href="#cb12-8" tabindex="-1"></a>  <span class="st">&quot;b_omega_Intercept&quot;</span>, <span class="st">&quot;b_omega_treatment&quot;</span>,</span>
+<span id="cb12-9"><a href="#cb12-9" tabindex="-1"></a>  <span class="st">&quot;b_rho_Intercept&quot;</span>, <span class="st">&quot;sigma&quot;</span>, <span class="st">&quot;sd_subject__b0_Intercept&quot;</span></span>
+<span id="cb12-10"><a href="#cb12-10" tabindex="-1"></a>)</span>
+<span id="cb12-11"><a href="#cb12-11" tabindex="-1"></a></span>
+<span id="cb12-12"><a href="#cb12-12" tabindex="-1"></a>sbp_draws_cov  <span class="ot">&lt;-</span> posterior<span class="sc">::</span><span class="fu">as_draws_df</span>(fit_sbp_cov<span class="sc">$</span>draws)[, sbp_names_cov]</span>
+<span id="cb12-13"><a href="#cb12-13" tabindex="-1"></a>brms_draws_cov <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(</span>
+<span id="cb12-14"><a href="#cb12-14" tabindex="-1"></a>  posterior<span class="sc">::</span><span class="fu">as_draws_df</span>(fit_brms_cov)</span>
+<span id="cb12-15"><a href="#cb12-15" tabindex="-1"></a>)[, brms_names_cov]</span>
+<span id="cb12-16"><a href="#cb12-16" tabindex="-1"></a><span class="fu">colnames</span>(brms_draws_cov) <span class="ot">&lt;-</span> sbp_names_cov</span>
+<span id="cb12-17"><a href="#cb12-17" tabindex="-1"></a></span>
+<span id="cb12-18"><a href="#cb12-18" tabindex="-1"></a>draws_long_cov <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(</span>
+<span id="cb12-19"><a href="#cb12-19" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(sbp_draws_cov, <span class="at">cols =</span> dplyr<span class="sc">::</span><span class="fu">everything</span>(),</span>
+<span id="cb12-20"><a href="#cb12-20" tabindex="-1"></a>                      <span class="at">names_to =</span> <span class="st">&quot;parameter&quot;</span>, <span class="at">values_to =</span> <span class="st">&quot;value&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb12-21"><a href="#cb12-21" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">package =</span> <span class="st">&quot;smoothbp&quot;</span>),</span>
+<span id="cb12-22"><a href="#cb12-22" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(brms_draws_cov, <span class="at">cols =</span> dplyr<span class="sc">::</span><span class="fu">everything</span>(),</span>
+<span id="cb12-23"><a href="#cb12-23" tabindex="-1"></a>                      <span class="at">names_to =</span> <span class="st">&quot;parameter&quot;</span>, <span class="at">values_to =</span> <span class="st">&quot;value&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb12-24"><a href="#cb12-24" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">package =</span> <span class="st">&quot;brms&quot;</span>)</span>
+<span id="cb12-25"><a href="#cb12-25" tabindex="-1"></a>)</span>
+<span id="cb12-26"><a href="#cb12-26" tabindex="-1"></a></span>
+<span id="cb12-27"><a href="#cb12-27" tabindex="-1"></a>draws_long_cov <span class="sc">%&gt;%</span></span>
+<span id="cb12-28"><a href="#cb12-28" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(parameter, package) <span class="sc">%&gt;%</span></span>
+<span id="cb12-29"><a href="#cb12-29" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">summarise</span>(</span>
+<span id="cb12-30"><a href="#cb12-30" tabindex="-1"></a>    <span class="at">mean =</span> <span class="fu">mean</span>(value),</span>
+<span id="cb12-31"><a href="#cb12-31" tabindex="-1"></a>    <span class="at">sd   =</span> <span class="fu">sd</span>(value),</span>
+<span id="cb12-32"><a href="#cb12-32" tabindex="-1"></a>    <span class="at">q025 =</span> <span class="fu">quantile</span>(value, <span class="fl">0.025</span>),</span>
+<span id="cb12-33"><a href="#cb12-33" tabindex="-1"></a>    <span class="at">q975 =</span> <span class="fu">quantile</span>(value, <span class="fl">0.975</span>),</span>
+<span id="cb12-34"><a href="#cb12-34" tabindex="-1"></a>    <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span></span>
+<span id="cb12-35"><a href="#cb12-35" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb12-36"><a href="#cb12-36" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_wider</span>(</span>
+<span id="cb12-37"><a href="#cb12-37" tabindex="-1"></a>    <span class="at">names_from  =</span> package,</span>
+<span id="cb12-38"><a href="#cb12-38" tabindex="-1"></a>    <span class="at">values_from =</span> <span class="fu">c</span>(mean, sd, q025, q975),</span>
+<span id="cb12-39"><a href="#cb12-39" tabindex="-1"></a>    <span class="at">names_glue  =</span> <span class="st">&quot;{package}_{.value}&quot;</span></span>
+<span id="cb12-40"><a href="#cb12-40" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb12-41"><a href="#cb12-41" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb12-42"><a href="#cb12-42" tabindex="-1"></a>    <span class="at">delta_mean_pct =</span> <span class="dv">100</span> <span class="sc">*</span> <span class="fu">abs</span>(smoothbp_mean <span class="sc">-</span> brms_mean) <span class="sc">/</span></span>
+<span id="cb12-43"><a href="#cb12-43" tabindex="-1"></a>                       (<span class="fu">abs</span>(brms_mean) <span class="sc">+</span> <span class="fl">1e-8</span>)</span>
+<span id="cb12-44"><a href="#cb12-44" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb12-45"><a href="#cb12-45" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">3</span>,</span>
+<span id="cb12-46"><a href="#cb12-46" tabindex="-1"></a>               <span class="at">caption =</span> <span class="st">&quot;Posterior summaries: omega ~ 1 + treatment.&quot;</span>)</span></code></pre></div>
+</div>
+<div id="overlaid-marginal-posteriors-covariate-model" class="section level2">
+<h2>Overlaid marginal posteriors (covariate model)</h2>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>true_vals_cov <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>  <span class="at">parameter =</span> <span class="fu">c</span>(<span class="st">&quot;b0_(Intercept)&quot;</span>, <span class="st">&quot;b1_(Intercept)&quot;</span>, <span class="st">&quot;delta1_(Intercept)&quot;</span>,</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>                 <span class="st">&quot;omega1_(Intercept)&quot;</span>, <span class="st">&quot;omega1_treatment&quot;</span>,</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>                 <span class="st">&quot;rho1_(Intercept)&quot;</span>, <span class="st">&quot;sigma&quot;</span>, <span class="st">&quot;sigma_u&quot;</span>),</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="at">true_value =</span> <span class="fu">c</span>(b0_true, b1_true, delta_true,</span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>                  omega_int, omega_trt, rho_true, sigma_true, sigma_u_true)</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>)</span>
+<span id="cb13-8"><a href="#cb13-8" tabindex="-1"></a></span>
+<span id="cb13-9"><a href="#cb13-9" tabindex="-1"></a><span class="fu">ggplot</span>(draws_long_cov, <span class="fu">aes</span>(<span class="at">x =</span> value, <span class="at">fill =</span> package, <span class="at">colour =</span> package)) <span class="sc">+</span></span>
+<span id="cb13-10"><a href="#cb13-10" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="at">alpha =</span> <span class="fl">0.35</span>) <span class="sc">+</span></span>
+<span id="cb13-11"><a href="#cb13-11" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">data =</span> true_vals_cov, <span class="fu">aes</span>(<span class="at">xintercept =</span> true_value),</span>
+<span id="cb13-12"><a href="#cb13-12" tabindex="-1"></a>             <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>, <span class="at">linewidth =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb13-13"><a href="#cb13-13" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> parameter, <span class="at">scales =</span> <span class="st">&quot;free&quot;</span>, <span class="at">ncol =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
+<span id="cb13-14"><a href="#cb13-14" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values  =</span> <span class="fu">c</span>(<span class="at">smoothbp =</span> <span class="st">&quot;#1f77b4&quot;</span>, <span class="at">brms =</span> <span class="st">&quot;#d62728&quot;</span>)) <span class="sc">+</span></span>
+<span id="cb13-15"><a href="#cb13-15" tabindex="-1"></a>  <span class="fu">scale_colour_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="at">smoothbp =</span> <span class="st">&quot;#1f77b4&quot;</span>, <span class="at">brms =</span> <span class="st">&quot;#d62728&quot;</span>)) <span class="sc">+</span></span>
+<span id="cb13-16"><a href="#cb13-16" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb13-17"><a href="#cb13-17" tabindex="-1"></a>    <span class="at">title    =</span> <span class="st">&quot;Marginal posteriors: smoothbp vs brms (omega ~ 1 + treatment)&quot;</span>,</span>
+<span id="cb13-18"><a href="#cb13-18" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="fu">sprintf</span>(</span>
+<span id="cb13-19"><a href="#cb13-19" tabindex="-1"></a>      <span class="st">&quot;smoothbp: %.1fs   brms: %.1fs.  Dashed lines = true values.&quot;</span>,</span>
+<span id="cb13-20"><a href="#cb13-20" tabindex="-1"></a>      time_sbp_cov, time_brms_cov</span>
+<span id="cb13-21"><a href="#cb13-21" tabindex="-1"></a>    ),</span>
+<span id="cb13-22"><a href="#cb13-22" tabindex="-1"></a>    <span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">&quot;density&quot;</span></span>
+<span id="cb13-23"><a href="#cb13-23" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb13-24"><a href="#cb13-24" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">11</span>) <span class="sc">+</span></span>
+<span id="cb13-25"><a href="#cb13-25" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)</span></code></pre></div>
+</div>
+<div id="effective-sample-size-per-second-covariate-model" class="section level2">
+<h2>Effective sample size per second (covariate model)</h2>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a>ess_sbp_cov  <span class="ot">&lt;-</span> posterior<span class="sc">::</span><span class="fu">summarise_draws</span>(fit_sbp_cov<span class="sc">$</span>draws, ess_bulk) <span class="sc">%&gt;%</span></span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(variable <span class="sc">%in%</span> sbp_names_cov) <span class="sc">%&gt;%</span></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">transmute</span>(<span class="at">parameter =</span> variable,</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>                   <span class="at">smoothbp_ess_per_sec =</span> ess_bulk <span class="sc">/</span> time_sbp_cov)</span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>ess_brms_cov <span class="ot">&lt;-</span> posterior<span class="sc">::</span><span class="fu">summarise_draws</span>(</span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>  posterior<span class="sc">::</span><span class="fu">as_draws_df</span>(fit_brms_cov), ess_bulk</span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>) <span class="sc">%&gt;%</span></span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(variable <span class="sc">%in%</span> brms_names_cov) <span class="sc">%&gt;%</span></span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">parameter =</span> sbp_names_cov[<span class="fu">match</span>(variable, brms_names_cov)]) <span class="sc">%&gt;%</span></span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">transmute</span>(parameter, <span class="at">brms_ess_per_sec =</span> ess_bulk <span class="sc">/</span> time_brms_cov)</span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a></span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a>dplyr<span class="sc">::</span><span class="fu">full_join</span>(ess_sbp_cov, ess_brms_cov, <span class="at">by =</span> <span class="st">&quot;parameter&quot;</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">1</span>,</span>
+<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a>               <span class="at">caption =</span> <span class="st">&quot;Bulk ESS / second by package and parameter (covariate model).&quot;</span>)</span></code></pre></div>
+<hr />
+</div>
+</div>
+<div id="scenario-3-hard-vs-smooth-change-point-comparison-with-mcp" class="section level1">
+<h1>Scenario 3: Hard vs smooth change-point — comparison with mcp</h1>
+<p><code>mcp</code> (Lindeløv, 2020) is the closest R package to
+<code>smoothbp</code> in terms of use case: Bayesian piecewise
+regression with flexible segment specification and a formula interface.
+The fundamental modelling difference is that <code>mcp</code> uses a
+<strong>hard</strong> (step-function) change-point — the trajectory
+makes an instantaneous kink at <code>cp_1</code> — while
+<code>smoothbp</code> uses a <strong>logistic sigmoid</strong> to smooth
+the transition, with the sharpness parameter <code>rho</code>
+controlling how abrupt it is. As <code>rho -&gt; infinity</code> the
+smooth transition converges to the hard kink, so on data generated with
+large <code>rho</code> the two approaches should give consistent
+estimates of the change-point location and slopes.</p>
+<p>A second structural difference: Both packages support complex
+hierarchical designs including <strong>random intercepts</strong> and
+<strong>varying change-points</strong>. For this comparison, we use a
+fixed-effects dataset to focus on the core change-point estimation.</p>
+<div id="parameterisation-note" class="section level2">
+<h2>Parameterisation note</h2>
+<p><code>mcp</code>’s two-segment joined-slope model has parameters:</p>
+<table>
+<colgroup>
+<col width="41%" />
+<col width="58%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>mcp parameter</th>
+<th>smoothbp equivalent</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>cp_1</code></td>
+<td><code>omega_(Intercept)</code> (change-point location)</td>
+</tr>
+<tr class="even">
+<td><code>time_1</code></td>
+<td><code>b1_(Intercept)</code> (pre-change slope)</td>
+</tr>
+<tr class="odd">
+<td><code>time_2</code></td>
+<td><code>b1_(Intercept) + delta1_(Intercept)</code> (post-change
+slope)</td>
+</tr>
+<tr class="even">
+<td><code>int_1</code></td>
+<td><code>b0_(Intercept) - b1 * omega</code> (level at tau = 0, not at
+change-point)</td>
+</tr>
+<tr class="odd">
+<td><code>sigma_1</code></td>
+<td><code>sigma</code></td>
+</tr>
+</tbody>
+</table>
+<p>The intercept-level parameters are not directly comparable because
+<code>smoothbp</code> anchors <code>b0</code> at the change-point while
+<code>mcp</code> anchors <code>int_1</code> at <code>tau = 0</code>. The
+slopes and change-point location are directly comparable.</p>
+</div>
+<div id="simulate-fixed-effects-data" class="section level2">
+<h2>Simulate fixed-effects data</h2>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">5501</span>)</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a>dat_mcp <span class="ot">&lt;-</span> <span class="fu">simulate_smoothbp</span>(</span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>  <span class="at">n_subj    =</span> <span class="dv">1</span>,</span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>  <span class="at">n_obs     =</span> <span class="dv">150</span>,</span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>  <span class="at">b0        =</span> <span class="fl">5.0</span>,</span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>  <span class="at">b1        =</span> <span class="sc">-</span><span class="fl">0.4</span>,</span>
+<span id="cb15-8"><a href="#cb15-8" tabindex="-1"></a>  <span class="at">b2        =</span>  <span class="fl">1.4</span>,</span>
+<span id="cb15-9"><a href="#cb15-9" tabindex="-1"></a>  <span class="at">omega     =</span>  <span class="fl">3.2</span>,</span>
+<span id="cb15-10"><a href="#cb15-10" tabindex="-1"></a>  <span class="at">rho       =</span>  <span class="fl">5.0</span>,   <span class="co"># moderately sharp — should agree well with mcp</span></span>
+<span id="cb15-11"><a href="#cb15-11" tabindex="-1"></a>  <span class="at">sigma     =</span>  <span class="fl">0.4</span>,</span>
+<span id="cb15-12"><a href="#cb15-12" tabindex="-1"></a>  <span class="at">sigma_u   =</span>  <span class="fl">0.0</span>,   <span class="co"># no random effects</span></span>
+<span id="cb15-13"><a href="#cb15-13" tabindex="-1"></a>  <span class="at">tau_range =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">6</span>),</span>
+<span id="cb15-14"><a href="#cb15-14" tabindex="-1"></a>  <span class="at">seed      =</span> <span class="dv">5501</span><span class="dt">L</span></span>
+<span id="cb15-15"><a href="#cb15-15" tabindex="-1"></a>)</span>
+<span id="cb15-16"><a href="#cb15-16" tabindex="-1"></a></span>
+<span id="cb15-17"><a href="#cb15-17" tabindex="-1"></a><span class="co"># mcp expects a plain data.frame without the factor column</span></span>
+<span id="cb15-18"><a href="#cb15-18" tabindex="-1"></a>dat_mcp_plain <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">tau =</span> dat_mcp<span class="sc">$</span>tau, <span class="at">y =</span> dat_mcp<span class="sc">$</span>y)</span>
+<span id="cb15-19"><a href="#cb15-19" tabindex="-1"></a></span>
+<span id="cb15-20"><a href="#cb15-20" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;n = %d  |  true omega = 3.2  |  true b1 = -0.4  |  true delta1 = 1.4</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb15-21"><a href="#cb15-21" tabindex="-1"></a>            <span class="fu">nrow</span>(dat_mcp_plain)))</span></code></pre></div>
+</div>
+<div id="fit-with-smoothbp-fixed-effects-rho-free" class="section level2">
+<h2>Fit with smoothbp (fixed effects, rho free)</h2>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a>t0 <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>fit_sbp_mcp <span class="ot">&lt;-</span> <span class="fu">smoothbp</span>(</span>
+<span id="cb16-3"><a href="#cb16-3" tabindex="-1"></a>  <span class="at">formula =</span> y <span class="sc">~</span> tau,</span>
+<span id="cb16-4"><a href="#cb16-4" tabindex="-1"></a>  <span class="at">b0      =</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb16-5"><a href="#cb16-5" tabindex="-1"></a>  <span class="at">b1      =</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb16-6"><a href="#cb16-6" tabindex="-1"></a>  <span class="at">deltas  =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span>),</span>
+<span id="cb16-7"><a href="#cb16-7" tabindex="-1"></a>  <span class="at">omega   =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span>),</span>
+<span id="cb16-8"><a href="#cb16-8" tabindex="-1"></a>  <span class="at">rho     =</span> <span class="fu">list</span>(<span class="fu">fixed</span>(<span class="dv">100</span>)), <span class="co"># Use fixed() to specify a sharp, hard kink</span></span>
+<span id="cb16-9"><a href="#cb16-9" tabindex="-1"></a>  <span class="at">data    =</span> dat_mcp,</span>
+<span id="cb16-10"><a href="#cb16-10" tabindex="-1"></a>  <span class="at">priors  =</span> <span class="fu">smoothbp_priors</span>(</span>
+<span id="cb16-11"><a href="#cb16-11" tabindex="-1"></a>    <span class="at">b0    =</span> <span class="fu">prior_normal</span>(<span class="dv">0</span>, <span class="dv">10</span>),</span>
+<span id="cb16-12"><a href="#cb16-12" tabindex="-1"></a>    <span class="at">b1    =</span> <span class="fu">prior_normal</span>(<span class="dv">0</span>, <span class="dv">2</span>),</span>
+<span id="cb16-13"><a href="#cb16-13" tabindex="-1"></a>    <span class="at">omega =</span> <span class="fu">list</span>(<span class="fu">prior_normal</span>(<span class="dv">3</span>, <span class="dv">2</span>, <span class="at">lb =</span> <span class="dv">0</span>, <span class="at">ub =</span> <span class="fu">max</span>(dat_mcp<span class="sc">$</span>tau)))</span>
+<span id="cb16-14"><a href="#cb16-14" tabindex="-1"></a>  ),</span>
+<span id="cb16-15"><a href="#cb16-15" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span><span class="dt">L</span>, <span class="at">iter =</span> <span class="dv">2000</span><span class="dt">L</span>, <span class="at">warmup =</span> <span class="dv">1000</span><span class="dt">L</span>,</span>
+<span id="cb16-16"><a href="#cb16-16" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">5501</span><span class="dt">L</span>, <span class="at">.verbose =</span> <span class="cn">FALSE</span></span>
+<span id="cb16-17"><a href="#cb16-17" tabindex="-1"></a>)</span>
+<span id="cb16-18"><a href="#cb16-18" tabindex="-1"></a>time_sbp_mcp <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">difftime</span>(<span class="fu">Sys.time</span>(), t0, <span class="at">units =</span> <span class="st">&quot;secs&quot;</span>))</span>
+<span id="cb16-19"><a href="#cb16-19" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;smoothbp: %.1f s</span><span class="sc">\n</span><span class="st">&quot;</span>, time_sbp_mcp))</span></code></pre></div>
+</div>
+<div id="fit-with-mcp-hard-change-point" class="section level2">
+<h2>Fit with mcp (hard change-point)</h2>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="co"># Two-segment joined-slope model: the natural mcp equivalent</span></span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>model_mcp <span class="ot">&lt;-</span> <span class="fu">list</span>(</span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>  y <span class="sc">~</span> <span class="dv">1</span> <span class="sc">+</span> tau,   <span class="co"># segment 1: intercept + pre-change slope</span></span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>  <span class="sc">~</span> <span class="dv">0</span> <span class="sc">+</span> tau      <span class="co"># segment 2: joined at cp_1, post-change slope</span></span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a>)</span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a></span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a><span class="co"># Restrict cp_1 to the observed time range, matching the smoothbp bound</span></span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a>prior_mcp <span class="ot">&lt;-</span> <span class="fu">list</span>(<span class="at">cp_1 =</span> <span class="st">&quot;dunif(0, 6)&quot;</span>)</span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">5501</span>)</span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a>t0 <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a>fit_mcp <span class="ot">&lt;-</span> mcp<span class="sc">::</span><span class="fu">mcp</span>(</span>
+<span id="cb17-12"><a href="#cb17-12" tabindex="-1"></a>  model_mcp,</span>
+<span id="cb17-13"><a href="#cb17-13" tabindex="-1"></a>  <span class="at">data  =</span> dat_mcp_plain,</span>
+<span id="cb17-14"><a href="#cb17-14" tabindex="-1"></a>  <span class="at">prior =</span> prior_mcp,</span>
+<span id="cb17-15"><a href="#cb17-15" tabindex="-1"></a>  <span class="at">par_x =</span> <span class="st">&quot;tau&quot;</span>,</span>
+<span id="cb17-16"><a href="#cb17-16" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span><span class="dt">L</span>, <span class="at">iter =</span> <span class="dv">2000</span><span class="dt">L</span>, <span class="at">adapt =</span> <span class="dv">1000</span><span class="dt">L</span>,</span>
+<span id="cb17-17"><a href="#cb17-17" tabindex="-1"></a>)</span>
+<span id="cb17-18"><a href="#cb17-18" tabindex="-1"></a>time_mcp <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">difftime</span>(<span class="fu">Sys.time</span>(), t0, <span class="at">units =</span> <span class="st">&quot;secs&quot;</span>))</span>
+<span id="cb17-19"><a href="#cb17-19" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;mcp: %.1f s</span><span class="sc">\n</span><span class="st">&quot;</span>, time_mcp))</span></code></pre></div>
+</div>
+<div id="compare-posteriors-1" class="section level2">
+<h2>Compare posteriors</h2>
+<p>The critical comparison is on <code>omega</code> / <code>cp_1</code>
+(change-point location) and the two slopes. The post-change slope from
+mcp (<code>time_2</code>) is equivalent to <code>b1 + delta1</code> in
+smoothbp.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a>sbp_sum_mcp <span class="ot">&lt;-</span> posterior<span class="sc">::</span><span class="fu">summarise_draws</span>(fit_sbp_mcp<span class="sc">$</span>draws) <span class="sc">|&gt;</span></span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(variable <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;b1_(Intercept)&quot;</span>, <span class="st">&quot;delta1_(Intercept)&quot;</span>, <span class="st">&quot;omega1_(Intercept)&quot;</span>,</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a>                               <span class="st">&quot;rho1_(Intercept)&quot;</span>, <span class="st">&quot;sigma&quot;</span>))</span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a></span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a>mcp_sum <span class="ot">&lt;-</span> <span class="fu">summary</span>(fit_mcp) <span class="sc">|&gt;</span></span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(name <span class="sc">%in%</span> <span class="fu">c</span>(<span class="st">&quot;cp_1&quot;</span>, <span class="st">&quot;int_1&quot;</span>, <span class="st">&quot;tau_1&quot;</span>, <span class="st">&quot;tau_2&quot;</span>, <span class="st">&quot;sigma_1&quot;</span>))</span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a></span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a><span class="co"># Compute post-change slope from smoothbp draws for direct comparison</span></span>
+<span id="cb18-9"><a href="#cb18-9" tabindex="-1"></a>dm_sbp_mcp <span class="ot">&lt;-</span> posterior<span class="sc">::</span><span class="fu">as_draws_matrix</span>(fit_sbp_mcp<span class="sc">$</span>draws)</span>
+<span id="cb18-10"><a href="#cb18-10" tabindex="-1"></a>post_slope <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(dm_sbp_mcp[, <span class="st">&quot;b1_(Intercept)&quot;</span>] <span class="sc">+</span></span>
+<span id="cb18-11"><a href="#cb18-11" tabindex="-1"></a>                           dm_sbp_mcp[, <span class="st">&quot;delta1_(Intercept)&quot;</span>])</span>
+<span id="cb18-12"><a href="#cb18-12" tabindex="-1"></a></span>
+<span id="cb18-13"><a href="#cb18-13" tabindex="-1"></a>comparison_mcp <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb18-14"><a href="#cb18-14" tabindex="-1"></a>  <span class="at">parameter          =</span> <span class="fu">c</span>(<span class="st">&quot;omega / cp_1&quot;</span>,</span>
+<span id="cb18-15"><a href="#cb18-15" tabindex="-1"></a>                          <span class="st">&quot;b1 / time_1 (pre-change slope)&quot;</span>,</span>
+<span id="cb18-16"><a href="#cb18-16" tabindex="-1"></a>                          <span class="st">&quot;b1+delta1 / time_2 (post-change slope)&quot;</span>,</span>
+<span id="cb18-17"><a href="#cb18-17" tabindex="-1"></a>                          <span class="st">&quot;sigma&quot;</span>),</span>
+<span id="cb18-18"><a href="#cb18-18" tabindex="-1"></a>  <span class="at">truth              =</span> <span class="fu">c</span>(<span class="fl">3.2</span>, <span class="sc">-</span><span class="fl">0.4</span>, <span class="sc">-</span><span class="fl">0.4</span> <span class="sc">+</span> <span class="fl">1.4</span>, <span class="fl">0.4</span>),</span>
+<span id="cb18-19"><a href="#cb18-19" tabindex="-1"></a>  <span class="at">sbp_mean           =</span> <span class="fu">c</span>(</span>
+<span id="cb18-20"><a href="#cb18-20" tabindex="-1"></a>    sbp_sum_mcp<span class="sc">$</span>mean[sbp_sum_mcp<span class="sc">$</span>variable <span class="sc">==</span> <span class="st">&quot;omega1_(Intercept)&quot;</span>],</span>
+<span id="cb18-21"><a href="#cb18-21" tabindex="-1"></a>    sbp_sum_mcp<span class="sc">$</span>mean[sbp_sum_mcp<span class="sc">$</span>variable <span class="sc">==</span> <span class="st">&quot;b1_(Intercept)&quot;</span>],</span>
+<span id="cb18-22"><a href="#cb18-22" tabindex="-1"></a>    <span class="fu">mean</span>(post_slope),</span>
+<span id="cb18-23"><a href="#cb18-23" tabindex="-1"></a>    sbp_sum_mcp<span class="sc">$</span>mean[sbp_sum_mcp<span class="sc">$</span>variable <span class="sc">==</span> <span class="st">&quot;sigma&quot;</span>]</span>
+<span id="cb18-24"><a href="#cb18-24" tabindex="-1"></a>  ),</span>
+<span id="cb18-25"><a href="#cb18-25" tabindex="-1"></a>  <span class="at">sbp_lo             =</span> <span class="fu">c</span>(</span>
+<span id="cb18-26"><a href="#cb18-26" tabindex="-1"></a>    sbp_sum_mcp<span class="sc">$</span>q2<span class="fl">.5</span>[sbp_sum_mcp<span class="sc">$</span>variable <span class="sc">==</span> <span class="st">&quot;omega1_(Intercept)&quot;</span>],</span>
+<span id="cb18-27"><a href="#cb18-27" tabindex="-1"></a>    sbp_sum_mcp<span class="sc">$</span>q2<span class="fl">.5</span>[sbp_sum_mcp<span class="sc">$</span>variable <span class="sc">==</span> <span class="st">&quot;b1_(Intercept)&quot;</span>],</span>
+<span id="cb18-28"><a href="#cb18-28" tabindex="-1"></a>    <span class="fu">quantile</span>(post_slope, <span class="fl">0.025</span>),</span>
+<span id="cb18-29"><a href="#cb18-29" tabindex="-1"></a>    sbp_sum_mcp<span class="sc">$</span>q2<span class="fl">.5</span>[sbp_sum_mcp<span class="sc">$</span>variable <span class="sc">==</span> <span class="st">&quot;sigma&quot;</span>]</span>
+<span id="cb18-30"><a href="#cb18-30" tabindex="-1"></a>  ),</span>
+<span id="cb18-31"><a href="#cb18-31" tabindex="-1"></a>  <span class="at">sbp_hi             =</span> <span class="fu">c</span>(</span>
+<span id="cb18-32"><a href="#cb18-32" tabindex="-1"></a>    sbp_sum_mcp<span class="sc">$</span>q97<span class="fl">.5</span>[sbp_sum_mcp<span class="sc">$</span>variable <span class="sc">==</span> <span class="st">&quot;omega1_(Intercept)&quot;</span>],</span>
+<span id="cb18-33"><a href="#cb18-33" tabindex="-1"></a>    sbp_sum_mcp<span class="sc">$</span>q97<span class="fl">.5</span>[sbp_sum_mcp<span class="sc">$</span>variable <span class="sc">==</span> <span class="st">&quot;b1_(Intercept)&quot;</span>],</span>
+<span id="cb18-34"><a href="#cb18-34" tabindex="-1"></a>    <span class="fu">quantile</span>(post_slope, <span class="fl">0.975</span>),</span>
+<span id="cb18-35"><a href="#cb18-35" tabindex="-1"></a>    sbp_sum_mcp<span class="sc">$</span>q97<span class="fl">.5</span>[sbp_sum_mcp<span class="sc">$</span>variable <span class="sc">==</span> <span class="st">&quot;sigma&quot;</span>]</span>
+<span id="cb18-36"><a href="#cb18-36" tabindex="-1"></a>  ),</span>
+<span id="cb18-37"><a href="#cb18-37" tabindex="-1"></a>  <span class="at">mcp_mean           =</span> mcp_sum<span class="sc">$</span>mean[<span class="fu">match</span>(<span class="fu">c</span>(<span class="st">&quot;cp_1&quot;</span>,<span class="st">&quot;tau_1&quot;</span>,<span class="st">&quot;tau_2&quot;</span>,<span class="st">&quot;sigma_1&quot;</span>),</span>
+<span id="cb18-38"><a href="#cb18-38" tabindex="-1"></a>                                          mcp_sum<span class="sc">$</span>name)],</span>
+<span id="cb18-39"><a href="#cb18-39" tabindex="-1"></a>  <span class="at">mcp_lo             =</span> mcp_sum<span class="sc">$</span>lower[<span class="fu">match</span>(<span class="fu">c</span>(<span class="st">&quot;cp_1&quot;</span>,<span class="st">&quot;tau_1&quot;</span>,<span class="st">&quot;tau_2&quot;</span>,<span class="st">&quot;sigma_1&quot;</span>),</span>
+<span id="cb18-40"><a href="#cb18-40" tabindex="-1"></a>                                           mcp_sum<span class="sc">$</span>name)],</span>
+<span id="cb18-41"><a href="#cb18-41" tabindex="-1"></a>  <span class="at">mcp_hi             =</span> mcp_sum<span class="sc">$</span>upper[<span class="fu">match</span>(<span class="fu">c</span>(<span class="st">&quot;cp_1&quot;</span>,<span class="st">&quot;tau_1&quot;</span>,<span class="st">&quot;tau_2&quot;</span>,<span class="st">&quot;sigma_1&quot;</span>),</span>
+<span id="cb18-42"><a href="#cb18-42" tabindex="-1"></a>                                           mcp_sum<span class="sc">$</span>name)]</span>
+<span id="cb18-43"><a href="#cb18-43" tabindex="-1"></a>)</span>
+<span id="cb18-44"><a href="#cb18-44" tabindex="-1"></a></span>
+<span id="cb18-45"><a href="#cb18-45" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(comparison_mcp, <span class="at">digits =</span> <span class="dv">3</span>,</span>
+<span id="cb18-46"><a href="#cb18-46" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">&quot;Scenario 3: smoothbp vs mcp on comparable parameters.</span></span>
+<span id="cb18-47"><a href="#cb18-47" tabindex="-1"></a><span class="st">             smoothbp post-change slope is b1 + delta1.&quot;</span>)</span></code></pre></div>
+</div>
+<div id="fitted-trajectories-hard-vs-smooth" class="section level2">
+<h2>Fitted trajectories: hard vs smooth</h2>
+<p>The plot below overlays the posterior mean fitted trajectories from
+both models. With <code>rho = 5</code> the smoothbp transition is fairly
+sharp and the two trajectories are visually similar near the
+change-point, but the logistic rounding is visible in the smoothbp
+curve.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" tabindex="-1"></a>tau_grid <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">6</span>, <span class="at">length.out =</span> <span class="dv">200</span>)</span>
+<span id="cb19-2"><a href="#cb19-2" tabindex="-1"></a></span>
+<span id="cb19-3"><a href="#cb19-3" tabindex="-1"></a><span class="co"># smoothbp posterior mean trajectory</span></span>
+<span id="cb19-4"><a href="#cb19-4" tabindex="-1"></a>draws_sbp_mcp  <span class="ot">&lt;-</span> posterior<span class="sc">::</span><span class="fu">as_draws_matrix</span>(fit_sbp_mcp<span class="sc">$</span>draws)</span>
+<span id="cb19-5"><a href="#cb19-5" tabindex="-1"></a>b0_m   <span class="ot">&lt;-</span> <span class="fu">mean</span>(draws_sbp_mcp[, <span class="st">&quot;b0_(Intercept)&quot;</span>])</span>
+<span id="cb19-6"><a href="#cb19-6" tabindex="-1"></a>b1_m   <span class="ot">&lt;-</span> <span class="fu">mean</span>(draws_sbp_mcp[, <span class="st">&quot;b1_(Intercept)&quot;</span>])</span>
+<span id="cb19-7"><a href="#cb19-7" tabindex="-1"></a>delta1_m <span class="ot">&lt;-</span> <span class="fu">mean</span>(draws_sbp_mcp[, <span class="st">&quot;delta1_(Intercept)&quot;</span>])</span>
+<span id="cb19-8"><a href="#cb19-8" tabindex="-1"></a>om_m   <span class="ot">&lt;-</span> <span class="fu">mean</span>(draws_sbp_mcp[, <span class="st">&quot;omega1_(Intercept)&quot;</span>])</span>
+<span id="cb19-9"><a href="#cb19-9" tabindex="-1"></a>rho_m  <span class="ot">&lt;-</span> <span class="fu">mean</span>(draws_sbp_mcp[, <span class="st">&quot;rho1_(Intercept)&quot;</span>])</span>
+<span id="cb19-10"><a href="#cb19-10" tabindex="-1"></a></span>
+<span id="cb19-11"><a href="#cb19-11" tabindex="-1"></a>sigmoid  <span class="ot">&lt;-</span> <span class="cf">function</span>(x) <span class="dv">1</span> <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> <span class="fu">exp</span>(<span class="sc">-</span>x))</span>
+<span id="cb19-12"><a href="#cb19-12" tabindex="-1"></a>d_grid   <span class="ot">&lt;-</span> tau_grid <span class="sc">-</span> om_m</span>
+<span id="cb19-13"><a href="#cb19-13" tabindex="-1"></a>mu_sbp   <span class="ot">&lt;-</span> b0_m <span class="sc">+</span> b1_m <span class="sc">*</span> d_grid <span class="sc">+</span> delta1_m <span class="sc">*</span> d_grid <span class="sc">*</span> <span class="fu">sigmoid</span>(d_grid <span class="sc">*</span> rho_m)</span>
+<span id="cb19-14"><a href="#cb19-14" tabindex="-1"></a></span>
+<span id="cb19-15"><a href="#cb19-15" tabindex="-1"></a><span class="co"># mcp posterior mean trajectory</span></span>
+<span id="cb19-16"><a href="#cb19-16" tabindex="-1"></a>cp_m    <span class="ot">&lt;-</span> mcp_sum<span class="sc">$</span>mean[mcp_sum<span class="sc">$</span>name <span class="sc">==</span> <span class="st">&quot;cp_1&quot;</span>]</span>
+<span id="cb19-17"><a href="#cb19-17" tabindex="-1"></a>int_m   <span class="ot">&lt;-</span> mcp_sum<span class="sc">$</span>mean[mcp_sum<span class="sc">$</span>name <span class="sc">==</span> <span class="st">&quot;int_1&quot;</span>]</span>
+<span id="cb19-18"><a href="#cb19-18" tabindex="-1"></a>t1_m    <span class="ot">&lt;-</span> mcp_sum<span class="sc">$</span>mean[mcp_sum<span class="sc">$</span>name <span class="sc">==</span> <span class="st">&quot;tau_1&quot;</span>]</span>
+<span id="cb19-19"><a href="#cb19-19" tabindex="-1"></a>t2_m    <span class="ot">&lt;-</span> mcp_sum<span class="sc">$</span>mean[mcp_sum<span class="sc">$</span>name <span class="sc">==</span> <span class="st">&quot;tau_2&quot;</span>]</span>
+<span id="cb19-20"><a href="#cb19-20" tabindex="-1"></a>mu_mcp  <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(tau_grid <span class="sc">&lt;</span> cp_m,</span>
+<span id="cb19-21"><a href="#cb19-21" tabindex="-1"></a>                  int_m <span class="sc">+</span> t1_m <span class="sc">*</span> tau_grid,</span>
+<span id="cb19-22"><a href="#cb19-22" tabindex="-1"></a>                  int_m <span class="sc">+</span> t1_m <span class="sc">*</span> cp_m <span class="sc">+</span> t2_m <span class="sc">*</span> (tau_grid <span class="sc">-</span> cp_m))</span>
+<span id="cb19-23"><a href="#cb19-23" tabindex="-1"></a></span>
+<span id="cb19-24"><a href="#cb19-24" tabindex="-1"></a>traj_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb19-25"><a href="#cb19-25" tabindex="-1"></a>  <span class="at">tau    =</span> <span class="fu">rep</span>(tau_grid, <span class="dv">2</span>),</span>
+<span id="cb19-26"><a href="#cb19-26" tabindex="-1"></a>  <span class="at">mu     =</span> <span class="fu">c</span>(mu_sbp, mu_mcp),</span>
+<span id="cb19-27"><a href="#cb19-27" tabindex="-1"></a>  <span class="at">model  =</span> <span class="fu">rep</span>(<span class="fu">c</span>(<span class="st">&quot;smoothbp (logistic)&quot;</span>, <span class="st">&quot;mcp (hard kink)&quot;</span>), <span class="at">each =</span> <span class="dv">200</span>)</span>
+<span id="cb19-28"><a href="#cb19-28" tabindex="-1"></a>)</span>
+<span id="cb19-29"><a href="#cb19-29" tabindex="-1"></a></span>
+<span id="cb19-30"><a href="#cb19-30" tabindex="-1"></a><span class="fu">ggplot</span>() <span class="sc">+</span></span>
+<span id="cb19-31"><a href="#cb19-31" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(tau, y), <span class="at">data =</span> dat_mcp_plain, <span class="at">alpha =</span> <span class="fl">0.25</span>, <span class="at">size =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb19-32"><a href="#cb19-32" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(tau, mu, <span class="at">colour =</span> model, <span class="at">linetype =</span> model),</span>
+<span id="cb19-33"><a href="#cb19-33" tabindex="-1"></a>            <span class="at">data =</span> traj_df, <span class="at">linewidth =</span> <span class="fl">0.9</span>) <span class="sc">+</span></span>
+<span id="cb19-34"><a href="#cb19-34" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">xintercept =</span> <span class="fl">3.2</span>, <span class="at">linetype =</span> <span class="st">&quot;dotted&quot;</span>, <span class="at">colour =</span> <span class="st">&quot;grey40&quot;</span>) <span class="sc">+</span></span>
+<span id="cb19-35"><a href="#cb19-35" tabindex="-1"></a>  <span class="fu">scale_colour_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;smoothbp (logistic)&quot;</span> <span class="ot">=</span> <span class="st">&quot;#2166ac&quot;</span>,</span>
+<span id="cb19-36"><a href="#cb19-36" tabindex="-1"></a>                                 <span class="st">&quot;mcp (hard kink)&quot;</span>     <span class="ot">=</span> <span class="st">&quot;#d6604d&quot;</span>)) <span class="sc">+</span></span>
+<span id="cb19-37"><a href="#cb19-37" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title    =</span> <span class="st">&quot;Posterior mean fitted trajectories&quot;</span>,</span>
+<span id="cb19-38"><a href="#cb19-38" tabindex="-1"></a>       <span class="at">subtitle =</span> <span class="st">&quot;Dotted line = true change-point (omega = 3.2)&quot;</span>,</span>
+<span id="cb19-39"><a href="#cb19-39" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">&quot;tau&quot;</span>, <span class="at">y =</span> <span class="st">&quot;y&quot;</span>, <span class="at">colour =</span> <span class="cn">NULL</span>, <span class="at">linetype =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb19-40"><a href="#cb19-40" tabindex="-1"></a>  <span class="fu">theme_bw</span>() <span class="sc">+</span></span>
+<span id="cb19-41"><a href="#cb19-41" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)</span></code></pre></div>
+</div>
+<div id="timing-and-ess-comparison" class="section level2">
+<h2>Timing and ESS comparison</h2>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="co"># smoothbp ESS on omega</span></span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a>sbp_ess_mcp <span class="ot">&lt;-</span> posterior<span class="sc">::</span><span class="fu">summarise_draws</span>(</span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a>  fit_sbp_mcp<span class="sc">$</span>draws[,, <span class="fu">c</span>(<span class="st">&quot;omega1_(Intercept)&quot;</span>, <span class="st">&quot;b1_(Intercept)&quot;</span>,</span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a>                          <span class="st">&quot;delta1_(Intercept)&quot;</span>, <span class="st">&quot;sigma&quot;</span>)],</span>
+<span id="cb20-5"><a href="#cb20-5" tabindex="-1"></a>  <span class="at">ess_bulk =</span> posterior<span class="sc">::</span>ess_bulk</span>
+<span id="cb20-6"><a href="#cb20-6" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb20-7"><a href="#cb20-7" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">ess_per_sec =</span> ess_bulk <span class="sc">/</span> time_sbp_mcp,</span>
+<span id="cb20-8"><a href="#cb20-8" tabindex="-1"></a>                <span class="at">package =</span> <span class="st">&quot;smoothbp&quot;</span>)</span>
+<span id="cb20-9"><a href="#cb20-9" tabindex="-1"></a></span>
+<span id="cb20-10"><a href="#cb20-10" tabindex="-1"></a><span class="co"># mcp ESS — extract draws from mcp object</span></span>
+<span id="cb20-11"><a href="#cb20-11" tabindex="-1"></a><span class="co"># mcp stores posterior draws as a coda::mcmc.list in $mcmc_post</span></span>
+<span id="cb20-12"><a href="#cb20-12" tabindex="-1"></a>mcp_draws <span class="ot">&lt;-</span> posterior<span class="sc">::</span><span class="fu">as_draws_array</span>(fit_mcp<span class="sc">$</span>mcmc_post)</span>
+<span id="cb20-13"><a href="#cb20-13" tabindex="-1"></a>mcp_ess_draws <span class="ot">&lt;-</span> posterior<span class="sc">::</span><span class="fu">summarise_draws</span>(</span>
+<span id="cb20-14"><a href="#cb20-14" tabindex="-1"></a>  mcp_draws[, , <span class="fu">c</span>(<span class="st">&quot;cp_1&quot;</span>, <span class="st">&quot;tau_1&quot;</span>, <span class="st">&quot;sigma_1&quot;</span>)],</span>
+<span id="cb20-15"><a href="#cb20-15" tabindex="-1"></a>  <span class="at">ess_bulk =</span> posterior<span class="sc">::</span>ess_bulk</span>
+<span id="cb20-16"><a href="#cb20-16" tabindex="-1"></a>)</span>
+<span id="cb20-17"><a href="#cb20-17" tabindex="-1"></a>mcp_ess_raw <span class="ot">&lt;-</span> <span class="fu">setNames</span>(mcp_ess_draws<span class="sc">$</span>ess_bulk, mcp_ess_draws<span class="sc">$</span>variable)</span>
+<span id="cb20-18"><a href="#cb20-18" tabindex="-1"></a></span>
+<span id="cb20-19"><a href="#cb20-19" tabindex="-1"></a><span class="fu">data.frame</span>(</span>
+<span id="cb20-20"><a href="#cb20-20" tabindex="-1"></a>  <span class="at">parameter   =</span> <span class="fu">c</span>(<span class="st">&quot;omega / cp_1&quot;</span>, <span class="st">&quot;b1 / time_1&quot;</span>, <span class="st">&quot;sigma&quot;</span>),</span>
+<span id="cb20-21"><a href="#cb20-21" tabindex="-1"></a>  <span class="at">sbp_ess_s   =</span> <span class="fu">round</span>(sbp_ess_mcp<span class="sc">$</span>ess_per_sec[</span>
+<span id="cb20-22"><a href="#cb20-22" tabindex="-1"></a>    <span class="fu">match</span>(<span class="fu">c</span>(<span class="st">&quot;omega1_(Intercept)&quot;</span>, <span class="st">&quot;b1_(Intercept)&quot;</span>, <span class="st">&quot;sigma&quot;</span>),</span>
+<span id="cb20-23"><a href="#cb20-23" tabindex="-1"></a>          sbp_ess_mcp<span class="sc">$</span>variable)], <span class="dv">1</span>),</span>
+<span id="cb20-24"><a href="#cb20-24" tabindex="-1"></a>  <span class="at">mcp_ess_s   =</span> <span class="fu">round</span>(<span class="fu">c</span>(mcp_ess_raw[<span class="st">&quot;cp_1&quot;</span>],</span>
+<span id="cb20-25"><a href="#cb20-25" tabindex="-1"></a>                         mcp_ess_raw[<span class="st">&quot;tau_1&quot;</span>],</span>
+<span id="cb20-26"><a href="#cb20-26" tabindex="-1"></a>                         mcp_ess_raw[<span class="st">&quot;sigma_1&quot;</span>]) <span class="sc">/</span> time_mcp, <span class="dv">1</span>)</span>
+<span id="cb20-27"><a href="#cb20-27" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb20-28"><a href="#cb20-28" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">caption =</span> <span class="st">&quot;ESS/second: smoothbp vs mcp.</span></span>
+<span id="cb20-29"><a href="#cb20-29" tabindex="-1"></a><span class="st">                          Higher is better.&quot;</span>)</span></code></pre></div>
+</div>
+<div id="what-this-comparison-shows" class="section level2">
+<h2>What this comparison shows</h2>
+<ul>
+<li><p><strong>Model equivalence at high rho</strong>: when
+<code>rho</code> is large (sharp transitions), the smoothbp and mcp
+posteriors for the change-point location and slopes are broadly
+consistent, validating that both packages locate the structural break
+correctly.</p></li>
+<li><p><strong>Modelling the sharpness</strong>: smoothbp estimates
+<code>rho</code> as a free parameter, quantifying transition sharpness
+as part of the posterior. mcp’s hard-kink model implicitly assumes
+<code>rho = infinity</code>; this can lead to a slightly overconfident
+change-point posterior when transitions are genuinely gradual.</p></li>
+<li><p><strong>Random effects</strong>: Both <code>mcp</code> and
+<code>smoothbp</code> support hierarchical models with random intercepts
+and varying change-points. <code>smoothbp</code>’s conjugate Gibbs
+updates for random intercepts often lead to more efficient sampling of
+the population mean and group-level deviations compared to
+general-purpose MCMC.</p></li>
+<li><p><strong>Speed</strong>: smoothbp’s compiled Rust back-end is
+substantially faster per iteration than mcp’s JAGS back-end, and does
+not require JAGS to be installed separately.</p></li>
+<li><p><strong>Flexibility</strong>: Both packages support
+<strong>multiple change-points</strong>. <code>mcp</code> offers a wider
+range of likelihood families (non-Gaussian), variance/autoregressive
+terms, and non-linear segments. <code>smoothbp</code> offers unique
+strengths including <strong>spike-and-slab variable selection</strong>
+for structural break discovery and the ability to include
+<strong>covariates on all five structural parameters</strong> (b0, b1,
+delta, omega, rho) in a single model.</p></li>
+</ul>
+<hr />
+</div>
+<div id="what-to-look-for" class="section level2">
+<h2>What to look for</h2>
+<p>If both samplers have converged, the marginal posteriors overlay
+almost exactly, the means agree to within Monte Carlo error
+(<code>delta_mean_pct</code> should be a fraction of a per cent for
+well-mixed parameters), and the credible intervals are within sampling
+variability of each other.</p>
+<p><code>smoothbp</code> jointly samples the intercept <code>b0</code>
+and random effects <code>u</code> in a single conjugate Gibbs block.
+This avoids the slow-mixing ridge that arises when <code>b0</code> and
+<code>u</code> are updated in separate blocks (since the likelihood
+depends on <code>b0 + u_j</code>). As a result, <code>b0</code> and
+<code>sigma_u</code> mix well, with ESS comparable to or exceeding brms
+on these parameters.</p>
+<p>For the non-linear parameters (<code>omega</code>, <code>rho</code>),
+NUTS typically achieves higher ESS per iteration, but smoothbp’s cheaper
+per-iteration cost keeps ESS per second competitive.</p>
+<p>If you remove the <code>ub = max(dat$tau)</code> bound or the
+<code>init_fun</code>, you will likely see the brms posterior on
+<code>omega</code> and <code>b2</code> go bimodal: one cluster near the
+truth, and a second cluster in the unidentifiable region with
+<code>omega &gt; max(tau)</code> and <code>b2</code> pinned at a
+ridiculous value matching the right-edge slope. That is a sampler-mixing
+artefact, not a real feature of the posterior, and worth demonstrating
+in your own analyses before trusting results from change-point models
+that allow <code>omega</code> to escape the data range.</p>
+<p>A note on smoothbp’s robustness: smoothbp initialises every chain
+near the prior mean, which keeps it out of the degenerate region by
+construction. That is excellent in practice when the user has a sensible
+prior on <code>omega</code>, and is the typical case. It also means that
+on a problem where the posterior is genuinely multimodal, the chains may
+all converge to whichever mode is closest to the prior mean and fail to
+explore the others. If you suspect multimodality, fit with deliberately
+overdispersed initial values by varying the prior across runs.</p>
+<hr />
+</div>
+</div>
+<div id="scenario-4-multi-breakpoint-model" class="section level1">
+<h1>Scenario 4: Multi-breakpoint model</h1>
+<p>This scenario validates the new multi-breakpoint architecture by
+simulating data with <strong>two true change-points</strong> and fitting
+both smoothbp and brms. If the two samplers agree — i.e., marginal
+posteriors overlap — we have strong evidence that the implementation is
+correct.</p>
+<div id="simulate-two-breakpoint-data" class="section level2">
+<h2>Simulate two-breakpoint data</h2>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">9801</span>)</span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a>n  <span class="ot">&lt;-</span> <span class="dv">300</span></span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a>tau <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">12</span>, <span class="at">length.out =</span> n)</span>
+<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a></span>
+<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a><span class="co"># True model: two breakpoints</span></span>
+<span id="cb21-6"><a href="#cb21-6" tabindex="-1"></a>om1_true    <span class="ot">&lt;-</span>  <span class="fl">3.5</span>;  rho1_true <span class="ot">&lt;-</span> <span class="fl">5.0</span>;  delta1_true <span class="ot">&lt;-</span> <span class="sc">-</span><span class="fl">1.2</span></span>
+<span id="cb21-7"><a href="#cb21-7" tabindex="-1"></a>om2_true    <span class="ot">&lt;-</span>  <span class="fl">8.0</span>;  rho2_true <span class="ot">&lt;-</span> <span class="fl">4.0</span>;  delta2_true <span class="ot">&lt;-</span>  <span class="fl">1.8</span></span>
+<span id="cb21-8"><a href="#cb21-8" tabindex="-1"></a>b0_true     <span class="ot">&lt;-</span>  <span class="fl">5.0</span>;  b1_true   <span class="ot">&lt;-</span>  <span class="fl">0.3</span>;  sigma_true  <span class="ot">&lt;-</span>  <span class="fl">0.3</span></span>
+<span id="cb21-9"><a href="#cb21-9" tabindex="-1"></a></span>
+<span id="cb21-10"><a href="#cb21-10" tabindex="-1"></a>d1  <span class="ot">&lt;-</span> tau <span class="sc">-</span> om1_true;  s1 <span class="ot">&lt;-</span> <span class="fu">plogis</span>(d1 <span class="sc">*</span> rho1_true)</span>
+<span id="cb21-11"><a href="#cb21-11" tabindex="-1"></a>d2  <span class="ot">&lt;-</span> tau <span class="sc">-</span> om2_true;  s2 <span class="ot">&lt;-</span> <span class="fu">plogis</span>(d2 <span class="sc">*</span> rho2_true)</span>
+<span id="cb21-12"><a href="#cb21-12" tabindex="-1"></a>mu  <span class="ot">&lt;-</span> b0_true <span class="sc">+</span> b1_true <span class="sc">*</span> (tau <span class="sc">-</span> om1_true) <span class="sc">+</span></span>
+<span id="cb21-13"><a href="#cb21-13" tabindex="-1"></a>       delta1_true <span class="sc">*</span> d1 <span class="sc">*</span> s1 <span class="sc">+</span> delta2_true <span class="sc">*</span> d2 <span class="sc">*</span> s2</span>
+<span id="cb21-14"><a href="#cb21-14" tabindex="-1"></a>y   <span class="ot">&lt;-</span> mu <span class="sc">+</span> <span class="fu">rnorm</span>(n, <span class="at">sd =</span> sigma_true)</span>
+<span id="cb21-15"><a href="#cb21-15" tabindex="-1"></a>dat_multi <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">y =</span> y, <span class="at">tau =</span> tau)</span>
+<span id="cb21-16"><a href="#cb21-16" tabindex="-1"></a></span>
+<span id="cb21-17"><a href="#cb21-17" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;True: b0=%.1f b1=%.1f delta1=%.1f omega1=%.1f delta2=%.1f omega2=%.1f sigma=%.1f</span><span class="sc">\n</span><span class="st">&quot;</span>,</span>
+<span id="cb21-18"><a href="#cb21-18" tabindex="-1"></a>            b0_true, b1_true, delta1_true, om1_true, delta2_true, om2_true, sigma_true))</span></code></pre></div>
+</div>
+<div id="fit-with-smoothbp-2" class="section level2">
+<h2>Fit with smoothbp</h2>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a>t0 <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a>fit_sbp_multi <span class="ot">&lt;-</span> <span class="fu">smoothbp</span>(</span>
+<span id="cb22-3"><a href="#cb22-3" tabindex="-1"></a>  <span class="at">formula =</span> y <span class="sc">~</span> tau,</span>
+<span id="cb22-4"><a href="#cb22-4" tabindex="-1"></a>  <span class="at">b0      =</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb22-5"><a href="#cb22-5" tabindex="-1"></a>  <span class="at">b1      =</span> <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb22-6"><a href="#cb22-6" tabindex="-1"></a>  <span class="at">deltas  =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span>, <span class="sc">~</span> <span class="dv">1</span>),</span>
+<span id="cb22-7"><a href="#cb22-7" tabindex="-1"></a>  <span class="at">omega   =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span>, <span class="sc">~</span> <span class="dv">1</span>),</span>
+<span id="cb22-8"><a href="#cb22-8" tabindex="-1"></a>  <span class="at">rho     =</span> <span class="fu">list</span>(<span class="sc">~</span> <span class="dv">1</span>, <span class="sc">~</span> <span class="dv">1</span>),</span>
+<span id="cb22-9"><a href="#cb22-9" tabindex="-1"></a>  <span class="at">data    =</span> dat_multi,</span>
+<span id="cb22-10"><a href="#cb22-10" tabindex="-1"></a>  <span class="at">priors  =</span> <span class="fu">smoothbp_priors</span>(</span>
+<span id="cb22-11"><a href="#cb22-11" tabindex="-1"></a>    <span class="at">b0     =</span> <span class="fu">prior_normal</span>(<span class="dv">0</span>, <span class="dv">10</span>),</span>
+<span id="cb22-12"><a href="#cb22-12" tabindex="-1"></a>    <span class="at">b1     =</span> <span class="fu">prior_normal</span>(<span class="dv">0</span>, <span class="dv">2</span>),</span>
+<span id="cb22-13"><a href="#cb22-13" tabindex="-1"></a>    <span class="at">omega  =</span> <span class="fu">list</span>(</span>
+<span id="cb22-14"><a href="#cb22-14" tabindex="-1"></a>      <span class="fu">prior_normal</span>(<span class="fl">3.5</span>, <span class="dv">2</span>, <span class="at">lb =</span> <span class="dv">0</span>, <span class="at">ub =</span> <span class="dv">6</span>),</span>
+<span id="cb22-15"><a href="#cb22-15" tabindex="-1"></a>      <span class="fu">prior_normal</span>(<span class="fl">8.0</span>, <span class="dv">2</span>, <span class="at">lb =</span> <span class="dv">4</span>, <span class="at">ub =</span> <span class="fu">max</span>(dat_multi<span class="sc">$</span>tau))</span>
+<span id="cb22-16"><a href="#cb22-16" tabindex="-1"></a>    ),</span>
+<span id="cb22-17"><a href="#cb22-17" tabindex="-1"></a>    <span class="at">rho    =</span> <span class="fu">list</span>(<span class="fu">prior_normal</span>(<span class="dv">4</span>, <span class="dv">2</span>, <span class="at">lb =</span> <span class="dv">0</span>),</span>
+<span id="cb22-18"><a href="#cb22-18" tabindex="-1"></a>                  <span class="fu">prior_normal</span>(<span class="dv">4</span>, <span class="dv">2</span>, <span class="at">lb =</span> <span class="dv">0</span>))</span>
+<span id="cb22-19"><a href="#cb22-19" tabindex="-1"></a>  ),</span>
+<span id="cb22-20"><a href="#cb22-20" tabindex="-1"></a>  <span class="at">chains =</span> <span class="dv">4</span><span class="dt">L</span>, <span class="at">iter =</span> <span class="dv">2000</span><span class="dt">L</span>, <span class="at">warmup =</span> <span class="dv">1000</span><span class="dt">L</span>,</span>
+<span id="cb22-21"><a href="#cb22-21" tabindex="-1"></a>  <span class="at">seed =</span> <span class="dv">9801</span><span class="dt">L</span>, <span class="at">.verbose =</span> <span class="cn">FALSE</span></span>
+<span id="cb22-22"><a href="#cb22-22" tabindex="-1"></a>)</span>
+<span id="cb22-23"><a href="#cb22-23" tabindex="-1"></a>time_sbp_multi <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">difftime</span>(<span class="fu">Sys.time</span>(), t0, <span class="at">units =</span> <span class="st">&quot;secs&quot;</span>))</span>
+<span id="cb22-24"><a href="#cb22-24" tabindex="-1"></a><span class="fu">cat</span>(<span class="fu">sprintf</span>(<span class="st">&quot;smoothbp: %.1f s</span><span class="sc">\n</span><span class="st">&quot;</span>, time_sbp_multi))</span></code></pre></div>
+</div>
+<div id="fit-with-brms-stan-nuts-1" class="section level2">
+<h2>Fit with brms (Stan / NUTS)</h2>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a><span class="fu">suppressPackageStartupMessages</span>(<span class="fu">library</span>(brms))</span>
+<span id="cb23-2"><a href="#cb23-2" tabindex="-1"></a></span>
+<span id="cb23-3"><a href="#cb23-3" tabindex="-1"></a><span class="co"># Two-breakpoint non-linear formula for brms</span></span>
+<span id="cb23-4"><a href="#cb23-4" tabindex="-1"></a>bf_multi <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">bf</span>(</span>
+<span id="cb23-5"><a href="#cb23-5" tabindex="-1"></a>  y <span class="sc">~</span> b0 <span class="sc">+</span> b1 <span class="sc">*</span> (tau <span class="sc">-</span> om1) <span class="sc">+</span></span>
+<span id="cb23-6"><a href="#cb23-6" tabindex="-1"></a>        d1 <span class="sc">*</span> (tau <span class="sc">-</span> om1) <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> <span class="fu">exp</span>(<span class="sc">-</span>(tau <span class="sc">-</span> om1) <span class="sc">*</span> rho1)) <span class="sc">+</span></span>
+<span id="cb23-7"><a href="#cb23-7" tabindex="-1"></a>        d2 <span class="sc">*</span> (tau <span class="sc">-</span> om2) <span class="sc">/</span> (<span class="dv">1</span> <span class="sc">+</span> <span class="fu">exp</span>(<span class="sc">-</span>(tau <span class="sc">-</span> om2) <span class="sc">*</span> rho2)),</span>
+<span id="cb23-8"><a href="#cb23-8" tabindex="-1"></a>  b0 <span class="sc">~</span> <span class="dv">1</span>, b1 <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb23-9"><a href="#cb23-9" tabindex="-1"></a>  d1 <span class="sc">~</span> <span class="dv">1</span>, om1 <span class="sc">~</span> <span class="dv">1</span>, rho1 <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb23-10"><a href="#cb23-10" tabindex="-1"></a>  d2 <span class="sc">~</span> <span class="dv">1</span>, om2 <span class="sc">~</span> <span class="dv">1</span>, rho2 <span class="sc">~</span> <span class="dv">1</span>,</span>
+<span id="cb23-11"><a href="#cb23-11" tabindex="-1"></a>  <span class="at">nl =</span> <span class="cn">TRUE</span></span>
+<span id="cb23-12"><a href="#cb23-12" tabindex="-1"></a>)</span>
+<span id="cb23-13"><a href="#cb23-13" tabindex="-1"></a></span>
+<span id="cb23-14"><a href="#cb23-14" tabindex="-1"></a>priors_brms_multi <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb23-15"><a href="#cb23-15" tabindex="-1"></a>  brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">10</span>),  <span class="at">nlpar =</span> <span class="st">&quot;b0&quot;</span>),</span>
+<span id="cb23-16"><a href="#cb23-16" tabindex="-1"></a>  brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">2</span>),   <span class="at">nlpar =</span> <span class="st">&quot;b1&quot;</span>),</span>
+<span id="cb23-17"><a href="#cb23-17" tabindex="-1"></a>  brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">2</span>),   <span class="at">nlpar =</span> <span class="st">&quot;d1&quot;</span>),</span>
+<span id="cb23-18"><a href="#cb23-18" tabindex="-1"></a>  brms<span class="sc">::</span><span class="fu">prior_string</span>(<span class="st">&quot;normal(3.5, 2)&quot;</span>, <span class="at">nlpar =</span> <span class="st">&quot;om1&quot;</span>, <span class="at">lb =</span> <span class="dv">0</span>, <span class="at">ub =</span> <span class="dv">6</span>),</span>
+<span id="cb23-19"><a href="#cb23-19" tabindex="-1"></a>  brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">4</span>, <span class="dv">2</span>),   <span class="at">nlpar =</span> <span class="st">&quot;rho1&quot;</span>, <span class="at">lb =</span> <span class="dv">0</span>),</span>
+<span id="cb23-20"><a href="#cb23-20" tabindex="-1"></a>  brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">0</span>, <span class="dv">2</span>),   <span class="at">nlpar =</span> <span class="st">&quot;d2&quot;</span>),</span>
+<span id="cb23-21"><a href="#cb23-21" tabindex="-1"></a>  brms<span class="sc">::</span><span class="fu">prior_string</span>(<span class="st">&quot;normal(8.0, 2)&quot;</span>, <span class="at">nlpar =</span> <span class="st">&quot;om2&quot;</span>, <span class="at">lb =</span> <span class="dv">4</span>, <span class="at">ub =</span> <span class="dv">12</span>),</span>
+<span id="cb23-22"><a href="#cb23-22" tabindex="-1"></a>  brms<span class="sc">::</span><span class="fu">prior</span>(<span class="fu">normal</span>(<span class="dv">4</span>, <span class="dv">2</span>),   <span class="at">nlpar =</span> <span class="st">&quot;rho2&quot;</span>, <span class="at">lb =</span> <span class="dv">0</span>)</span>
+<span id="cb23-23"><a href="#cb23-23" tabindex="-1"></a>)</span>
+<span id="cb23-24"><a href="#cb23-24" tabindex="-1"></a></span>
+<span id="cb23-25"><a href="#cb23-25" tabindex="-1"></a>init_multi <span class="ot">&lt;-</span> <span class="cf">function</span>() <span class="fu">list</span>(</span>
+<span id="cb23-26"><a href="#cb23-26" tabindex="-1"></a>  <span class="at">b_b0   =</span> <span class="fu">array</span>(<span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="dv">5</span>, <span class="fl">0.5</span>)),</span>
+<span id="cb23-27"><a href="#cb23-27" tabindex="-1"></a>  <span class="at">b_b1   =</span> <span class="fu">array</span>(<span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="fl">0.3</span>, <span class="fl">0.1</span>)),</span>
+<span id="cb23-28"><a href="#cb23-28" tabindex="-1"></a>  <span class="at">b_d1   =</span> <span class="fu">array</span>(<span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="sc">-</span><span class="dv">1</span>, <span class="fl">0.3</span>)),</span>
+<span id="cb23-29"><a href="#cb23-29" tabindex="-1"></a>  <span class="at">b_om1  =</span> <span class="fu">array</span>(<span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="fl">3.5</span>, <span class="fl">0.3</span>)),</span>
+<span id="cb23-30"><a href="#cb23-30" tabindex="-1"></a>  <span class="at">b_rho1 =</span> <span class="fu">array</span>(<span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="dv">5</span>, <span class="fl">0.5</span>)),</span>
+<span id="cb23-31"><a href="#cb23-31" tabindex="-1"></a>  <span class="at">b_d2   =</span> <span class="fu">array</span>(<span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="fl">1.5</span>, <span class="fl">0.3</span>)),</span>
+<span id="cb23-32"><a href="#cb23-32" tabindex="-1"></a>  <span class="at">b_om2  =</span> <span class="fu">array</span>(<span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="dv">8</span>, <span class="fl">0.3</span>)),</span>
+<span id="cb23-33"><a href="#cb23-33" tabindex="-1"></a>  <span class="at">b_rho2 =</span> <span class="fu">array</span>(<span class="fu">rnorm</span>(<span class="dv">1</span>, <span class="dv">4</span>, <span class="fl">0.5</span>))</span>
+<span id="cb23-34"><a href="#cb23-34" tabindex="-1"></a>)</span>
+<span id="cb23-35"><a href="#cb23-35" tabindex="-1"></a></span>
+<span id="cb23-36"><a href="#cb23-36" tabindex="-1"></a>t0 <span class="ot">&lt;-</span> <span class="fu">Sys.time</span>()</span>
+<span id="cb23-37"><a href="#cb23-37" tabindex="-1"></a>fit_brms_multi <span class="ot">&lt;-</span> brms<span class="sc">::</span><span class="fu">brm</span>(</span>
+<span id="cb23-38"><a href="#cb23-38" tabindex="-1"></a>  bf_multi,</span>
+<span id="cb23-39"><a href="#cb23-39" tabindex="-1"></a>  <span class="at">data    =</span> dat_multi,</span>
+<span id="cb23-40"><a href="#cb23-40" tabindex="-1"></a>  <span class="at">prior   =</span> priors_brms_multi,</span>
+<span id="cb23-41"><a href="#cb23-41" tabindex="-1"></a>  <span class="at">chains  =</span> <span class="dv">4</span>, <span class="at">iter =</span> <span class="dv">2000</span>, <span class="at">warmup =</span> <span class="dv">1000</span>,</span>
+<span id="cb23-42"><a href="#cb23-42" tabindex="-1"></a>  <span class="at">seed    =</span> <span class="dv">9801</span>, <span class="at">refresh =</span> <span class="dv">0</span>,</span>
+<span id="cb23-43"><a href="#cb23-43" tabindex="-1"></a>  <span class="at">init    =</span> init_multi,</span>
+<span id="cb23-44"><a href="#cb23-44" tabindex="-1"></a>  <span class="at">control =</span> <span class="fu">list</span>(<span class="at">adapt_delta =</span> <span class="fl">0.95</span>)</span>
+<span id="cb23-45"><a href="#cb23-45" tabindex="-1"></a>)</span>
+<span id="cb23-46"><a href="#cb23-46" tabindex="-1"></a>time_brms_multi <span class="ot">&lt;-</span> <span class="fu">as.numeric</span>(<span class="fu">difftime</span>(<span class="fu">Sys.time</span>(), t0, <span class="at">units =</span> <span class="st">&quot;secs&quot;</span>))</span></code></pre></div>
+</div>
+<div id="compare-posteriors-2" class="section level2">
+<h2>Compare posteriors</h2>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a>sbp_names_multi <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a>  <span class="st">&quot;b0_(Intercept)&quot;</span>, <span class="st">&quot;b1_(Intercept)&quot;</span>,</span>
+<span id="cb24-3"><a href="#cb24-3" tabindex="-1"></a>  <span class="st">&quot;delta1_(Intercept)&quot;</span>, <span class="st">&quot;omega1_(Intercept)&quot;</span>, <span class="st">&quot;rho1_(Intercept)&quot;</span>,</span>
+<span id="cb24-4"><a href="#cb24-4" tabindex="-1"></a>  <span class="st">&quot;delta2_(Intercept)&quot;</span>, <span class="st">&quot;omega2_(Intercept)&quot;</span>, <span class="st">&quot;rho2_(Intercept)&quot;</span>,</span>
+<span id="cb24-5"><a href="#cb24-5" tabindex="-1"></a>  <span class="st">&quot;sigma&quot;</span></span>
+<span id="cb24-6"><a href="#cb24-6" tabindex="-1"></a>)</span>
+<span id="cb24-7"><a href="#cb24-7" tabindex="-1"></a>brms_names_multi <span class="ot">&lt;-</span> <span class="fu">c</span>(</span>
+<span id="cb24-8"><a href="#cb24-8" tabindex="-1"></a>  <span class="st">&quot;b_b0_Intercept&quot;</span>, <span class="st">&quot;b_b1_Intercept&quot;</span>,</span>
+<span id="cb24-9"><a href="#cb24-9" tabindex="-1"></a>  <span class="st">&quot;b_d1_Intercept&quot;</span>, <span class="st">&quot;b_om1_Intercept&quot;</span>, <span class="st">&quot;b_rho1_Intercept&quot;</span>,</span>
+<span id="cb24-10"><a href="#cb24-10" tabindex="-1"></a>  <span class="st">&quot;b_d2_Intercept&quot;</span>, <span class="st">&quot;b_om2_Intercept&quot;</span>, <span class="st">&quot;b_rho2_Intercept&quot;</span>,</span>
+<span id="cb24-11"><a href="#cb24-11" tabindex="-1"></a>  <span class="st">&quot;sigma&quot;</span></span>
+<span id="cb24-12"><a href="#cb24-12" tabindex="-1"></a>)</span>
+<span id="cb24-13"><a href="#cb24-13" tabindex="-1"></a>true_vals_multi <span class="ot">&lt;-</span> <span class="fu">c</span>(b0_true, b1_true,</span>
+<span id="cb24-14"><a href="#cb24-14" tabindex="-1"></a>                     delta1_true, om1_true, rho1_true,</span>
+<span id="cb24-15"><a href="#cb24-15" tabindex="-1"></a>                     delta2_true, om2_true, rho2_true,</span>
+<span id="cb24-16"><a href="#cb24-16" tabindex="-1"></a>                     sigma_true)</span>
+<span id="cb24-17"><a href="#cb24-17" tabindex="-1"></a></span>
+<span id="cb24-18"><a href="#cb24-18" tabindex="-1"></a>sbp_draws_multi  <span class="ot">&lt;-</span> posterior<span class="sc">::</span><span class="fu">as_draws_df</span>(fit_sbp_multi<span class="sc">$</span>draws)[, sbp_names_multi]</span>
+<span id="cb24-19"><a href="#cb24-19" tabindex="-1"></a>brms_draws_multi <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(</span>
+<span id="cb24-20"><a href="#cb24-20" tabindex="-1"></a>  posterior<span class="sc">::</span><span class="fu">as_draws_df</span>(fit_brms_multi)</span>
+<span id="cb24-21"><a href="#cb24-21" tabindex="-1"></a>)[, brms_names_multi]</span>
+<span id="cb24-22"><a href="#cb24-22" tabindex="-1"></a><span class="fu">colnames</span>(brms_draws_multi) <span class="ot">&lt;-</span> sbp_names_multi</span>
+<span id="cb24-23"><a href="#cb24-23" tabindex="-1"></a></span>
+<span id="cb24-24"><a href="#cb24-24" tabindex="-1"></a>draws_long_multi <span class="ot">&lt;-</span> dplyr<span class="sc">::</span><span class="fu">bind_rows</span>(</span>
+<span id="cb24-25"><a href="#cb24-25" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(sbp_draws_multi, <span class="at">cols =</span> dplyr<span class="sc">::</span><span class="fu">everything</span>(),</span>
+<span id="cb24-26"><a href="#cb24-26" tabindex="-1"></a>                      <span class="at">names_to =</span> <span class="st">&quot;parameter&quot;</span>, <span class="at">values_to =</span> <span class="st">&quot;value&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb24-27"><a href="#cb24-27" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">package =</span> <span class="st">&quot;smoothbp&quot;</span>),</span>
+<span id="cb24-28"><a href="#cb24-28" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_longer</span>(brms_draws_multi, <span class="at">cols =</span> dplyr<span class="sc">::</span><span class="fu">everything</span>(),</span>
+<span id="cb24-29"><a href="#cb24-29" tabindex="-1"></a>                      <span class="at">names_to =</span> <span class="st">&quot;parameter&quot;</span>, <span class="at">values_to =</span> <span class="st">&quot;value&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb24-30"><a href="#cb24-30" tabindex="-1"></a>    dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">package =</span> <span class="st">&quot;brms&quot;</span>)</span>
+<span id="cb24-31"><a href="#cb24-31" tabindex="-1"></a>)</span>
+<span id="cb24-32"><a href="#cb24-32" tabindex="-1"></a></span>
+<span id="cb24-33"><a href="#cb24-33" tabindex="-1"></a>draws_long_multi <span class="sc">|&gt;</span></span>
+<span id="cb24-34"><a href="#cb24-34" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">group_by</span>(parameter, package) <span class="sc">|&gt;</span></span>
+<span id="cb24-35"><a href="#cb24-35" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">summarise</span>(<span class="at">mean =</span> <span class="fu">mean</span>(value), <span class="at">sd =</span> <span class="fu">sd</span>(value),</span>
+<span id="cb24-36"><a href="#cb24-36" tabindex="-1"></a>                   <span class="at">q025 =</span> <span class="fu">quantile</span>(value, <span class="fl">0.025</span>),</span>
+<span id="cb24-37"><a href="#cb24-37" tabindex="-1"></a>                   <span class="at">q975 =</span> <span class="fu">quantile</span>(value, <span class="fl">0.975</span>), <span class="at">.groups =</span> <span class="st">&quot;drop&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb24-38"><a href="#cb24-38" tabindex="-1"></a>  tidyr<span class="sc">::</span><span class="fu">pivot_wider</span>(<span class="at">names_from =</span> package,</span>
+<span id="cb24-39"><a href="#cb24-39" tabindex="-1"></a>                     <span class="at">values_from =</span> <span class="fu">c</span>(mean, sd, q025, q975),</span>
+<span id="cb24-40"><a href="#cb24-40" tabindex="-1"></a>                     <span class="at">names_glue =</span> <span class="st">&quot;{package}_{.value}&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb24-41"><a href="#cb24-41" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(</span>
+<span id="cb24-42"><a href="#cb24-42" tabindex="-1"></a>    <span class="at">truth          =</span> true_vals_multi[<span class="fu">match</span>(parameter, sbp_names_multi)],</span>
+<span id="cb24-43"><a href="#cb24-43" tabindex="-1"></a>    <span class="at">delta_mean_pct =</span> <span class="dv">100</span> <span class="sc">*</span> <span class="fu">abs</span>(smoothbp_mean <span class="sc">-</span> brms_mean) <span class="sc">/</span></span>
+<span id="cb24-44"><a href="#cb24-44" tabindex="-1"></a>                       (<span class="fu">abs</span>(brms_mean) <span class="sc">+</span> <span class="fl">1e-8</span>)</span>
+<span id="cb24-45"><a href="#cb24-45" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb24-46"><a href="#cb24-46" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">3</span>,</span>
+<span id="cb24-47"><a href="#cb24-47" tabindex="-1"></a>               <span class="at">caption =</span> <span class="st">&quot;Scenario 4: two-breakpoint smoothbp vs brms.&quot;</span>)</span></code></pre></div>
+</div>
+<div id="overlaid-marginal-posteriors-the-key-validation" class="section level2">
+<h2>Overlaid marginal posteriors — the key validation</h2>
+<p>The densities from smoothbp (blue) and brms (red) should overlap
+almost exactly if both samplers are targeting the same posterior. Dashed
+vertical lines mark the true data-generating values.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a>true_df_multi <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a>  <span class="at">parameter  =</span> sbp_names_multi,</span>
+<span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a>  <span class="at">true_value =</span> true_vals_multi</span>
+<span id="cb25-4"><a href="#cb25-4" tabindex="-1"></a>)</span>
+<span id="cb25-5"><a href="#cb25-5" tabindex="-1"></a></span>
+<span id="cb25-6"><a href="#cb25-6" tabindex="-1"></a><span class="fu">ggplot</span>(draws_long_multi, <span class="fu">aes</span>(<span class="at">x =</span> value, <span class="at">fill =</span> package, <span class="at">colour =</span> package)) <span class="sc">+</span></span>
+<span id="cb25-7"><a href="#cb25-7" tabindex="-1"></a>  <span class="fu">geom_density</span>(<span class="at">alpha =</span> <span class="fl">0.35</span>, <span class="at">linewidth =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb25-8"><a href="#cb25-8" tabindex="-1"></a>  <span class="fu">geom_vline</span>(<span class="at">data =</span> true_df_multi,</span>
+<span id="cb25-9"><a href="#cb25-9" tabindex="-1"></a>             <span class="fu">aes</span>(<span class="at">xintercept =</span> true_value),</span>
+<span id="cb25-10"><a href="#cb25-10" tabindex="-1"></a>             <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span>, <span class="at">linewidth =</span> <span class="fl">0.5</span>, <span class="at">colour =</span> <span class="st">&quot;black&quot;</span>) <span class="sc">+</span></span>
+<span id="cb25-11"><a href="#cb25-11" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> parameter, <span class="at">scales =</span> <span class="st">&quot;free&quot;</span>, <span class="at">ncol =</span> <span class="dv">3</span>) <span class="sc">+</span></span>
+<span id="cb25-12"><a href="#cb25-12" tabindex="-1"></a>  <span class="fu">scale_fill_manual</span>(<span class="at">values   =</span> <span class="fu">c</span>(<span class="at">smoothbp =</span> <span class="st">&quot;#1f77b4&quot;</span>, <span class="at">brms =</span> <span class="st">&quot;#d62728&quot;</span>)) <span class="sc">+</span></span>
+<span id="cb25-13"><a href="#cb25-13" tabindex="-1"></a>  <span class="fu">scale_colour_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="at">smoothbp =</span> <span class="st">&quot;#1f77b4&quot;</span>, <span class="at">brms =</span> <span class="st">&quot;#d62728&quot;</span>)) <span class="sc">+</span></span>
+<span id="cb25-14"><a href="#cb25-14" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb25-15"><a href="#cb25-15" tabindex="-1"></a>    <span class="at">title    =</span> <span class="st">&quot;Scenario 4: Multi-breakpoint posteriors — smoothbp vs brms&quot;</span>,</span>
+<span id="cb25-16"><a href="#cb25-16" tabindex="-1"></a>    <span class="at">subtitle =</span> <span class="fu">sprintf</span>(</span>
+<span id="cb25-17"><a href="#cb25-17" tabindex="-1"></a>      <span class="st">&quot;Two true change-points. smoothbp: %.1fs   brms: %.1fs</span><span class="sc">\n</span><span class="st">Dashed = true value. Overlapping densities = agreement.&quot;</span>,</span>
+<span id="cb25-18"><a href="#cb25-18" tabindex="-1"></a>      time_sbp_multi, time_brms_multi</span>
+<span id="cb25-19"><a href="#cb25-19" tabindex="-1"></a>    ),</span>
+<span id="cb25-20"><a href="#cb25-20" tabindex="-1"></a>    <span class="at">x =</span> <span class="cn">NULL</span>, <span class="at">y =</span> <span class="st">&quot;Density&quot;</span></span>
+<span id="cb25-21"><a href="#cb25-21" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb25-22"><a href="#cb25-22" tabindex="-1"></a>  <span class="fu">theme_minimal</span>(<span class="at">base_size =</span> <span class="dv">11</span>) <span class="sc">+</span></span>
+<span id="cb25-23"><a href="#cb25-23" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;bottom&quot;</span>)</span></code></pre></div>
+</div>
+<div id="what-to-look-for-1" class="section level2">
+<h2>What to look for</h2>
+<ul>
+<li><strong>Density overlap</strong>: the blue (smoothbp) and red (brms)
+curves should be nearly indistinguishable for every parameter.
+Meaningful separation would indicate a bug in one of the
+implementations.</li>
+<li><strong>True value coverage</strong>: dashed lines should fall
+inside or very near the high-density region of both posteriors.</li>
+<li><strong>Timing</strong>: smoothbp’s Rust sampler should be
+substantially faster than brms/Stan, especially at larger <span class="math inline">\(n\)</span>.</li>
+</ul>
+<div class="sourceCode" id="cb26"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" tabindex="-1"></a>ess_sbp_multi <span class="ot">&lt;-</span> posterior<span class="sc">::</span><span class="fu">summarise_draws</span>(</span>
+<span id="cb26-2"><a href="#cb26-2" tabindex="-1"></a>  fit_sbp_multi<span class="sc">$</span>draws[, , sbp_names_multi], <span class="at">ess_bulk =</span> posterior<span class="sc">::</span>ess_bulk</span>
+<span id="cb26-3"><a href="#cb26-3" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb26-4"><a href="#cb26-4" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">transmute</span>(<span class="at">parameter =</span> variable,</span>
+<span id="cb26-5"><a href="#cb26-5" tabindex="-1"></a>                   <span class="at">smoothbp_ess_per_sec =</span> ess_bulk <span class="sc">/</span> time_sbp_multi)</span>
+<span id="cb26-6"><a href="#cb26-6" tabindex="-1"></a></span>
+<span id="cb26-7"><a href="#cb26-7" tabindex="-1"></a>ess_brms_multi <span class="ot">&lt;-</span> posterior<span class="sc">::</span><span class="fu">summarise_draws</span>(</span>
+<span id="cb26-8"><a href="#cb26-8" tabindex="-1"></a>  posterior<span class="sc">::</span><span class="fu">as_draws_df</span>(fit_brms_multi), <span class="at">ess_bulk =</span> posterior<span class="sc">::</span>ess_bulk</span>
+<span id="cb26-9"><a href="#cb26-9" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb26-10"><a href="#cb26-10" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">filter</span>(variable <span class="sc">%in%</span> brms_names_multi) <span class="sc">|&gt;</span></span>
+<span id="cb26-11"><a href="#cb26-11" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">mutate</span>(<span class="at">parameter =</span> sbp_names_multi[<span class="fu">match</span>(variable, brms_names_multi)]) <span class="sc">|&gt;</span></span>
+<span id="cb26-12"><a href="#cb26-12" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">transmute</span>(parameter, <span class="at">brms_ess_per_sec =</span> ess_bulk <span class="sc">/</span> time_brms_multi)</span>
+<span id="cb26-13"><a href="#cb26-13" tabindex="-1"></a></span>
+<span id="cb26-14"><a href="#cb26-14" tabindex="-1"></a>dplyr<span class="sc">::</span><span class="fu">full_join</span>(ess_sbp_multi, ess_brms_multi, <span class="at">by =</span> <span class="st">&quot;parameter&quot;</span>) <span class="sc">|&gt;</span></span>
+<span id="cb26-15"><a href="#cb26-15" tabindex="-1"></a>  knitr<span class="sc">::</span><span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">1</span>,</span>
+<span id="cb26-16"><a href="#cb26-16" tabindex="-1"></a>               <span class="at">caption =</span> <span class="st">&quot;ESS/second: smoothbp vs brms (two-breakpoint model).&quot;</span>)</span></code></pre></div>
+</div>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
