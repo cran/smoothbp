@@ -121,6 +121,11 @@ if (file.exists(mv_ofp)) {
 # read as a single string
 mv_txt <- readLines(mv_fp)
 
+# Determine if we are in dev/development mode.
+# We are in dev mode if a .git directory is present, or if NOT_CRAN/DEBUG environment variables are set.
+is_dev <- dir.exists(".git") || is_not_cran || is_debug
+.run_document <- if (is_dev) "" else "# "
+
 # replace placeholder values
 new_txt <- gsub("@CRAN_FLAGS@", .cran_flags, mv_txt) |>
   gsub("@PROFILE@", .profile, x = _) |>
@@ -129,7 +134,8 @@ new_txt <- gsub("@CRAN_FLAGS@", .cran_flags, mv_txt) |>
   gsub("@TARGET@", .target, x = _) |>
   gsub("@PANIC_EXPORTS@", .panic_exports, x = _) |>
   gsub("@LINKER@", .linker, x = _) |>
-  gsub("@AR@", .ar_tool, x = _)
+  gsub("@AR@", .ar_tool, x = _) |>
+  gsub("@RUN_DOCUMENT@", .run_document, x = _)
 
 message("Writing `", mv_ofp, "`.")
 con <- file(mv_ofp, open = "wb")

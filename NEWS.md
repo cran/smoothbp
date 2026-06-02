@@ -1,3 +1,7 @@
+# smoothbp 0.2.2
+
+* Fixed build and installation failures on Fedora Linux and macOS check systems by conditionally skipping compiling and running the Cargo standalone wrapper generation (`document` target) at install time on CRAN.
+
 # smoothbp 0.2.1
 
 * Fixed a build failure on Windows where the offline Rust vendor directory was
