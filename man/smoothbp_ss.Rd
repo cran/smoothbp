@@ -22,8 +22,9 @@ smoothbp_ss(
   seed = NULL,
   step_om = 0.3,
   step_rho = 0.3,
-  target_accept = 0.65,
+  target_accept = 0.9,
   cores = getOption("smoothbp.cores", 1L),
+  reparameterise = c("none", "omega"),
   .verbose = TRUE
 )
 }
@@ -61,6 +62,10 @@ smoothbp_ss(
 \item{step_om, step_rho, target_accept}{HMC/MH tuning parameters.}
 
 \item{cores}{Number of CPU cores.}
+
+\item{reparameterise}{Character specifying the parameterisation for random change-points:
+\code{"none"} (centred) or \code{"omega"} (fully non-centred). Default is \code{"none"}.
+Only used if random effects are present.}
 
 \item{.verbose}{Print progress.}
 }

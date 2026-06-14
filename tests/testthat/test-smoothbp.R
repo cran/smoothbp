@@ -11,10 +11,10 @@ test_that("smoothbp recovers parameters on simulated data", {
 
   dat <- simulate_smoothbp(
     n_subj  = 30, n_obs = 8,
-    b0 = 5.0, b1 = -0.5, b2 = 1.5,
+    b0 = 5.0, b1 = -0.5, delta = 1.5,
     omega = 3.0, rho = 4.0,
     sigma = 0.5, sigma_u = 1.0,
-    seed = 7L
+    seed = 42L
   )
 
   tp <- attr(dat, "true_params")
@@ -29,9 +29,9 @@ test_that("smoothbp recovers parameters on simulated data", {
     data    = dat,
     priors  = smoothbp_priors(omega = prior_normal(3, 2, lb = 0)),
     chains  = 2L,
-    iter    = 1500L,
-    warmup  = 750L,
-    seed    = 7L,
+    iter    = 3000L,
+    warmup  = 1000L,
+    seed    = 42L,
     .verbose = FALSE
   )
 
@@ -41,7 +41,7 @@ test_that("smoothbp recovers parameters on simulated data", {
   param_map <- c(
     b0      = "b0_(Intercept)",
     b1      = "b1_(Intercept)",
-    b2      = "delta1_(Intercept)",
+    delta   = "delta1_(Intercept)",
     omega   = "omega1_(Intercept)",
     rho     = "rho1_(Intercept)",
     sigma   = "sigma",

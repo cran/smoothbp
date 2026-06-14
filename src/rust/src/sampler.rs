@@ -225,10 +225,9 @@ fn sample_gamma(data: &ModelData, _priors: &Priors, ss: &SpikeSlabConfig, state:
         let r1 = &data.y - &mu1;
         let log_p1 = -0.5 * r1.dot(&r1) / sigma2 + pi.ln();
         let log_p0 = -0.5 * r0.dot(&r0) / sigma2 + (1.0 - pi).ln();
-        let max_lp = f64::max(log_p1, log_p0);
-        let p1 = (log_p1 - max_lp).exp();
-        let p0 = (log_p0 - max_lp).exp();
-        *g = rng.gen_bool(p1 / (p1 + p0));
+        let log_odds = log_p1 - log_p0;
+        let prob = if log_odds.is_nan() { 0.5 } else { sigmoid(log_odds) };
+        *g = rng.gen_bool(prob);
     };
 
     let mut current_mu = mu_full;
@@ -663,7 +662,7 @@ pub fn run_chain(
     step_om_init: f64, step_rho_init: f64, target_accept: f64,
     seed: u64, verbose: bool, chain_id: usize, n_chains: usize,
     progress_fn: &dyn Fn(usize, usize, usize, usize, bool),
-) -> (DMatrix<f64>, usize) {
+) -> (DMatrix<f64>, [usize; 4]) {
     let mut rng = StdRng::seed_from_u64(seed);
     let mut state = init_state(data, priors, &mut rng);
     let n_post = n_iter - n_warmup;
@@ -714,8 +713,11 @@ pub fn run_chain(
             for (col, &val) in draw.iter().enumerate() { draws[(row, col)] = val; }
         }
     }
-    let n_div = adapt_om.iter().map(|h| h.n_divergent).sum::<usize>() + adapt_rho.iter().map(|h| h.n_divergent).sum::<usize>();
-    (draws, n_div)
+    let div_om  = adapt_om.iter().map(|h| h.n_divergent).sum::<usize>();
+    let div_rho = adapt_rho.iter().map(|h| h.n_divergent).sum::<usize>();
+    let n_div = div_om + div_rho;
+    // [total, subj, om, rho]; no subject block in the non-RE sampler.
+    (draws, [n_div, 0, div_om, div_rho])
 }
 
 pub fn run_chain_ss(
@@ -723,7 +725,7 @@ pub fn run_chain_ss(
     step_om_init: f64, step_rho_init: f64, target_accept: f64,
     seed: u64, verbose: bool, chain_id: usize, n_chains: usize,
     progress_fn: &dyn Fn(usize, usize, usize, usize, bool),
-) -> (DMatrix<f64>, usize) {
+) -> (DMatrix<f64>, [usize; 4]) {
     let mut rng = StdRng::seed_from_u64(seed);
     let mut state = init_state(data, priors, &mut rng);
     state.pi = ss.pi_init;
@@ -777,8 +779,11 @@ pub fn run_chain_ss(
             for (col, &val) in draw.iter().enumerate() { draws[(row, col)] = val; }
         }
     }
-    let n_div = adapt_om.iter().map(|h| h.n_divergent).sum::<usize>() + adapt_rho.iter().map(|h| h.n_divergent).sum::<usize>();
-    (draws, n_div)
+    let div_om  = adapt_om.iter().map(|h| h.n_divergent).sum::<usize>();
+    let div_rho = adapt_rho.iter().map(|h| h.n_divergent).sum::<usize>();
+    let n_div = div_om + div_rho;
+    // [total, subj, om, rho]; no subject block in the non-RE sampler.
+    (draws, [n_div, 0, div_om, div_rho])
 }
 
 fn init_state(data: &ModelData, priors: &Priors, rng: &mut StdRng) -> State {
@@ -789,8 +794,13 @@ fn init_state(data: &ModelData, priors: &Priors, rng: &mut StdRng) -> State {
     }));
     let u_b0 = DVector::zeros(data.n_groups_b0);
     let beta_b1 = DVector::from_iterator(data.x_b1.ncols(), (0..data.x_b1.ncols()).map(|i| {
-        let m = priors.b1_mean[i];
-        if priors.b1_sd[i] > 0.0 { m + jitter.sample(rng) } else { m }
+        let is_re = i < data.re_mask_b1.len() && data.re_mask_b1[i];
+        if is_re {
+            jitter.sample(rng)
+        } else {
+            let m = priors.b1_mean[i];
+            if priors.b1_sd[i] > 0.0 { m + jitter.sample(rng) } else { m }
+        }
     }));
     let mut beta_deltas = Vec::new();
     let mut beta_om = Vec::new();
@@ -799,12 +809,22 @@ fn init_state(data: &ModelData, priors: &Priors, rng: &mut StdRng) -> State {
 
     for k in 0..data.n_breakpoints {
         beta_deltas.push(DVector::from_iterator(data.x_deltas[k].ncols(), (0..data.x_deltas[k].ncols()).map(|i| {
-            let m = priors.delta_mean[k][i];
-            if priors.delta_sd[k][i] > 0.0 { m + jitter.sample(rng) } else { m }
+            let is_re = k < data.re_mask_deltas.len() && i < data.re_mask_deltas[k].len() && data.re_mask_deltas[k][i];
+            if is_re {
+                jitter.sample(rng)
+            } else {
+                let m = priors.delta_mean[k][i];
+                if priors.delta_sd[k][i] > 0.0 { m + jitter.sample(rng) } else { m }
+            }
         })));
         beta_om.push(DVector::from_iterator(data.x_om[k].ncols(), (0..data.x_om[k].ncols()).map(|i| {
-            let m = priors.om_mean[k][i];
-            if priors.om_sd[k][i] > 0.0 { m + jitter.sample(rng) } else { m }
+            let is_re = k < data.re_mask_om.len() && i < data.re_mask_om[k].len() && data.re_mask_om[k][i];
+            if is_re {
+                jitter.sample(rng)
+            } else {
+                let m = priors.om_mean[k][i];
+                if priors.om_sd[k][i] > 0.0 { m + jitter.sample(rng) } else { m }
+            }
         })));
         beta_rho.push(DVector::from_iterator(data.x_rho[k].ncols(), (0..data.x_rho[k].ncols()).map(|i| {
             let m = priors.rho_mean[k][i];
@@ -818,6 +838,8 @@ fn init_state(data: &ModelData, priors: &Priors, rng: &mut StdRng) -> State {
         sigma: 1.0, sigma_u: 1.0,
         gamma_b1: vec![true; data.x_b1.ncols()],
         gamma_deltas, pi: 0.5,
-        sigma_re_om: vec![1.0; data.n_breakpoints],
+        sigma_re_om:     vec![1.0; data.n_breakpoints],
+        sigma_re_b1:     1.0,
+        sigma_re_deltas: vec![1.0; data.n_breakpoints],
     }
 }

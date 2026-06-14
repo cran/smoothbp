@@ -30,7 +30,10 @@
 \item{object}{A \code{smoothbp_fit} object.}
 
 \item{formula, b0, b1, deltas, omega, rho, data, priors, chains, iter, warmup, seed, step_om, step_rho, target_accept, cores, .verbose}{Replacements for the corresponding arguments of \code{\link{smoothbp}}.
-Any argument not supplied is taken from \code{object}.}
+Any argument not supplied is taken from \code{object}, including the
+original \code{seed} and sampler tuning parameters (\code{step_om},
+\code{step_rho}, \code{target_accept}).  To use a fresh seed or different
+tuning, supply them explicitly.}
 
 \item{...}{Ignored.}
 }

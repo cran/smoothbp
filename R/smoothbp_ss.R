@@ -17,6 +17,9 @@
 #' @param step_om,step_rho,target_accept HMC/MH tuning parameters.
 #' @param cores Number of CPU cores.
 #' @param hierarchical Character vector specifying which parameters should be hierarchical. Currently only "omega" is supported.
+#' @param reparameterise Character specifying the parameterisation for random change-points:
+#'   \code{"none"} (centred) or \code{"omega"} (fully non-centred). Default is \code{"none"}.
+#'   Only used if random effects are present.
 #' @param .verbose Print progress.
 #'
 #' @return A \code{smoothbp_fit} object.
@@ -39,8 +42,9 @@ smoothbp_ss <- function(
     seed   = NULL,
     step_om  = 0.3,
     step_rho = 0.3,
-    target_accept = 0.65,
+    target_accept = 0.9,
     cores    = getOption("smoothbp.cores", 1L),
+    reparameterise = c("none", "omega"),
     .verbose = TRUE
 ) {
   if (!inherits(formula, "formula") || length(formula) != 3L) {
@@ -59,7 +63,10 @@ smoothbp_ss <- function(
 
   y   <- as.double(data[[response_name]])
   tau <- as.double(data[[time_name]])
-  
+
+  if (anyNA(y))   stop(sprintf("Response variable '%s' contains NA values. Remove or impute missing observations before fitting.", response_name))
+  if (anyNA(tau)) stop(sprintf("Time variable '%s' contains NA values.", time_name))
+
   if (length(tau) == 0L) {
     stop(sprintf("Time variable '%s' is empty or not found. A valid time/covariate column is required on the RHS of the formula.", time_name))
   }
@@ -71,6 +78,13 @@ smoothbp_ss <- function(
 
   if (.verbose) message("Building design matrices...")
   dm <- .build_design_matrices(b0, b1, deltas, omega, rho, data)
+
+  if (nrow(dm$X_b0) != length(y)) {
+    stop(sprintf(
+      "Design matrices have %d rows but data has %d observations. This is usually caused by NA values in predictor variables. Remove or impute missing values before fitting.",
+      nrow(dm$X_b0), length(y)
+    ))
+  }
   
   # Effective priors: override slab components
   priors_effective <- priors
@@ -94,7 +108,21 @@ smoothbp_ss <- function(
     as.integer(rep(1L, length(nms)))
   })
 
-  has_re_om <- .has_re(dm$X_om) || "omega" %in% hierarchical
+  if (!is.null(hierarchical)) {
+    .Deprecated(
+      msg = paste0(
+        "The `hierarchical` argument is deprecated and will be removed in a ",
+        "future version. Random effects on change-point timing are now ",
+        "auto-detected from formula syntax: use `omega = list(~ 1 + (1 | group))` ",
+        "instead of `hierarchical = \"omega\"`."
+      )
+    )
+  }
+
+  has_re_om     <- .has_re(dm$X_om) || "omega" %in% hierarchical
+  has_re_b1     <- .has_re(list(dm$X_b1))
+  has_re_deltas <- .has_re(dm$X_deltas)
+  has_re_any    <- has_re_om || has_re_b1 || has_re_deltas
   dm$has_re_om <- has_re_om
 
   if (.verbose) message("Running sampler...")
@@ -106,9 +134,36 @@ smoothbp_ss <- function(
   group_b0_safe <- .safe_int(dm$group_b0)
   b1_mask_safe  <- .safe_int(b1_mask)
 
-  if (has_re_om) {
+  if (has_re_any) {
     re_mask_om <- .get_re_masks(dm$X_om)
     if (length(re_mask_om) == 0) re_mask_om <- list(as.integer(-1))
+
+    reparameterise <- match.arg(reparameterise)
+    nc_om_per_group <- .build_nc_om_per_group(dm, reparameterise, has_re_om)
+
+    re_mask_b1_vec <- if (has_re_b1) {
+      m <- attr(dm$X_b1, "re_mask"); if (is.null(m)) as.integer(-1) else as.integer(m)
+    } else as.integer(-1)
+    re_mask_deltas_list <- if (has_re_deltas) .get_re_masks(dm$X_deltas) else list(as.integer(-1))
+    nc_b1     <- isTRUE(reparameterise == "omega" && has_re_b1)
+    nc_deltas <- as.integer(rep(reparameterise == "omega" && has_re_deltas, length(dm$X_deltas)))
+    group_re_vec <- {
+      re_grp <- NULL
+      if (has_re_b1) {
+        re_cols <- which(attr(dm$X_b1, "re_mask") == 1L)
+        if (length(re_cols)) re_grp <- max.col(dm$X_b1[, re_cols, drop = FALSE]) - 1L
+      } else if (has_re_deltas) {
+        for (k in seq_along(dm$X_deltas)) {
+          mask <- attr(dm$X_deltas[[k]], "re_mask"); re_cols <- which(mask == 1L)
+          if (length(re_cols)) { re_grp <- max.col(dm$X_deltas[[k]][, re_cols, drop = FALSE]) - 1L; break }
+        }
+      } else if (has_re_om) {
+        re_cols <- which(attr(dm$X_om[[1]], "re_mask") == 1L)
+        if (length(re_cols)) re_grp <- max.col(dm$X_om[[1]][, re_cols, drop = FALSE]) - 1L
+      }
+      if (is.null(re_grp)) as.integer(-1) else as.integer(re_grp)
+    }
+    n_subjects <- if (length(group_re_vec) > 1) max(group_re_vec) + 1L else 0L
 
     raw <- run_mcmc_re_ss(
       y             = y,
@@ -123,7 +178,14 @@ smoothbp_ss <- function(
       p_rho         = p_rho_safe,
       group_b0      = group_b0_safe,
       n_groups_b0   = dm$n_groups_b0,
-      re_mask_om    = re_mask_om,
+      re_mask_om      = re_mask_om,
+      nc_om_per_group = nc_om_per_group,
+      re_mask_b1      = re_mask_b1_vec,
+      re_mask_deltas = re_mask_deltas_list,
+      nc_b1         = nc_b1,
+      nc_deltas     = nc_deltas,
+      group_re      = group_re_vec,
+      n_subjects    = as.integer(n_subjects),
       prior_mean_b0 = pv$b0$mean, prior_sd_b0 = pv$b0$sd, prior_lb_b0 = pv$b0$lb, prior_ub_b0 = pv$b0$ub,
       prior_mean_b1 = pv$b1$mean, prior_sd_b1 = pv$b1$sd, prior_lb_b1 = pv$b1$lb, prior_ub_b1 = pv$b1$ub,
       prior_mean_deltas = lapply(pv$deltas, `[[`, "mean"),
@@ -138,12 +200,13 @@ smoothbp_ss <- function(
       prior_sd_rho      = lapply(pv$rho, `[[`, "sd"),
       prior_lb_rho      = lapply(pv$rho, `[[`, "lb"),
       prior_ub_rho      = lapply(pv$rho, `[[`, "ub"),
-      sigma_shape   = priors$sigma$shape,
-      sigma_scale   = priors$sigma$scale,
-      sigma_u_shape = priors$sigma_u$shape,
-      sigma_u_scale = priors$sigma_u$scale,
-      sigma_re_om_shape = priors$sigma_re_om$shape,
-      sigma_re_om_scale = priors$sigma_re_om$scale,
+      hyper_priors = as.double(c(
+        priors$sigma$shape, priors$sigma$scale,
+        priors$sigma_u$shape, priors$sigma_u$scale,
+        priors$sigma_re_om$shape, priors$sigma_re_om$scale,
+        priors$sigma_re_b1$shape, priors$sigma_re_b1$scale,
+        priors$sigma_re_deltas$shape, priors$sigma_re_deltas$scale
+      )),
       step_om  = step_om,
       step_rho = step_rho,
       target_accept = as.double(target_accept),
@@ -152,12 +215,10 @@ smoothbp_ss <- function(
       pi_init       = as.double(spike$pi[1]),
       pi_beta_a     = if (isTRUE(spike$learn_pi)) spike$a else 0.0,
       pi_beta_b     = if (isTRUE(spike$learn_pi)) spike$b else 0.0,
-      chains   = as.integer(chains),
-      iter     = as.integer(iter),
-      warmup   = as.integer(warmup),
-      seed     = as.integer(seed),
-      verbose  = isTRUE(.verbose),
-      n_cores  = as.integer(max(1L, cores))
+      mcmc_control  = as.integer(c(
+        chains, iter, warmup, seed,
+        isTRUE(.verbose), max(1L, cores)
+      ))
     )
   } else {
     raw <- run_mcmc_ss(
@@ -219,8 +280,11 @@ smoothbp_ss <- function(
   
   pnames <- c(base_pnames, gamma_names)
   if (isTRUE(spike$learn_pi)) pnames <- c(pnames, "pi")
-  if (has_re_om) {
-    pnames <- c(pnames, paste0("sigma_re_omega", seq_along(dm$X_om)))
+  if (has_re_any) {
+    pnames <- c(pnames,
+                paste0("sigma_re_omega", seq_along(dm$X_om)),
+                "sigma_re_b1",
+                paste0("sigma_re_delta", seq_along(dm$X_deltas)))
   }
   
   n_post <- nrow(raw$draws[[1]])
@@ -250,10 +314,19 @@ smoothbp_ss <- function(
       chains        = as.integer(chains),
       iter          = as.integer(iter),
       warmup        = as.integer(warmup),
+      seed          = as.integer(seed),
+      step_om       = step_om,
+      step_rho      = step_rho,
+      target_accept = target_accept,
       priors        = priors,
       spike         = spike,
       hierarchical  = hierarchical,
-      n_divergent   = as.integer(sum(raw$n_divergent))
+      n_divergent   = as.integer(sum(raw$n_divergent)),
+      n_divergent_by_block = list(
+        subj = as.integer(sum(raw$n_divergent_subj)),
+        om   = as.integer(sum(raw$n_divergent_om)),
+        rho  = as.integer(sum(raw$n_divergent_rho))
+      )
     ),
     class = c("smoothbp_ss_fit", "smoothbp_fit")
   )

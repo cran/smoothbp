@@ -1,6 +1,7 @@
 Package: smoothbp
 Title: Hierarchical Piecewise Regression with Smoothed Change-Points
-Version: 0.2.2
+Version: 0.2.4
+Date: 2026-06-12
 Authors@R: 
     person("Aidan D", "Bindoff", , "aidan.bindoff@utas.edu.au", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-0943-2702"))
@@ -17,6 +18,7 @@ Description: Fits Bayesian hierarchical piecewise regression models with
     <https://www.jstor.org/stable/25053023>.
 License: MIT + file LICENSE
 Encoding: UTF-8
+Language: en-GB
 RoxygenNote: 7.3.3
 Config/rextendr/version: 0.5.0
 SystemRequirements: Cargo (Rust's package manager), rustc >= 1.65.0
@@ -29,9 +31,9 @@ VignetteBuilder: knitr
 URL: https://github.com/ABindoff/smoothbp
 BugReports: https://github.com/ABindoff/smoothbp/issues
 NeedsCompilation: yes
-Packaged: 2026-06-01 21:45:09 UTC; bindoffa
+Packaged: 2026-06-14 00:38:37 UTC; bindoffa
 Author: Aidan D Bindoff [aut, cre] (ORCID:
     <https://orcid.org/0000-0002-0943-2702>)
 Maintainer: Aidan D Bindoff <aidan.bindoff@utas.edu.au>
 Repository: CRAN
-Date/Publication: 2026-06-02 06:40:11 UTC
+Date/Publication: 2026-06-14 05:20:02 UTC

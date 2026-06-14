@@ -83,7 +83,11 @@ fn run_mcmc(
         n_groups_b0: n_groups_b0 as usize,
         n_breakpoints: n_bp,
         n,
-        re_mask_om: Vec::new(),
+        re_mask_om:     Vec::new(),
+        re_mask_b1:     Vec::new(),
+        re_mask_deltas: Vec::new(),
+        group_re:       vec![-1_i32; n],
+        n_subjects:     0,
     };
 
     let priors = Priors {
@@ -113,6 +117,10 @@ fn run_mcmc(
         sigma_u_scale,
         sigma_re_om_shape: 1.0,
         sigma_re_om_scale: 1.0,
+        sigma_re_b1_shape: 1.0,
+        sigma_re_b1_scale: 1.0,
+        sigma_re_deltas_shape: 1.0,
+        sigma_re_deltas_scale: 1.0,
         p_b0: p_b0 as usize,
         p_b1: p_b1 as usize,
         p_deltas: p_deltas.iter().map(|&p| p as usize).collect(),
@@ -126,7 +134,7 @@ fn run_mcmc(
     let base_seed = seed as u64;
     let n_cores = (n_cores as usize).max(1);
 
-    let results: Vec<(DMatrix<f64>, usize)> = if n_cores > 1 && n_chains > 1 {
+    let results: Vec<(DMatrix<f64>, [usize; 4])> = if n_cores > 1 && n_chains > 1 {
         let pool = rayon::ThreadPoolBuilder::new().num_threads(n_cores).build().unwrap();
         pool.install(|| {
             (0..n_chains).into_par_iter().map(|c| {
@@ -141,15 +149,26 @@ fn run_mcmc(
         }).collect()
     };
 
-    let (chain_results, divergences): (Vec<Robj>, Vec<i32>) = results.into_iter().map(|(draws, n_div)| {
+    let mut chain_results: Vec<Robj> = Vec::with_capacity(results.len());
+    let mut div_total: Vec<i32> = Vec::with_capacity(results.len());
+    let mut div_subj:  Vec<i32> = Vec::with_capacity(results.len());
+    let mut div_om:    Vec<i32> = Vec::with_capacity(results.len());
+    let mut div_rho:   Vec<i32> = Vec::with_capacity(results.len());
+    for (draws, d) in results.into_iter() {
         let nr = draws.nrows();
         let nc = draws.ncols();
         let flat: Vec<f64> = draws.iter().cloned().collect();
-        let mat = RMatrix::new_matrix(nr, nc, |r, c| flat[c * nr + r]).into();
-        (mat, n_div as i32)
-    }).unzip();
+        let mat: Robj = RMatrix::new_matrix(nr, nc, |r, c| flat[c * nr + r]).into();
+        chain_results.push(mat);
+        div_total.push(d[0] as i32);  // [total, subj, om, rho]
+        div_subj.push(d[1] as i32);
+        div_om.push(d[2] as i32);
+        div_rho.push(d[3] as i32);
+    }
 
-    list!(draws = chain_results, n_divergent = divergences)
+    list!(draws = chain_results, n_divergent = div_total,
+          n_divergent_subj = div_subj, n_divergent_om = div_om,
+          n_divergent_rho = div_rho)
 }
 
 /// @noRd
@@ -216,7 +235,11 @@ fn run_mcmc_ss(
         n_groups_b0: n_groups_b0 as usize,
         n_breakpoints: n_bp,
         n,
-        re_mask_om: Vec::new(),
+        re_mask_om:     Vec::new(),
+        re_mask_b1:     Vec::new(),
+        re_mask_deltas: Vec::new(),
+        group_re:       vec![-1_i32; n],
+        n_subjects:     0,
     };
 
     let priors = Priors {
@@ -246,6 +269,10 @@ fn run_mcmc_ss(
         sigma_u_scale,
         sigma_re_om_shape: 1.0,
         sigma_re_om_scale: 1.0,
+        sigma_re_b1_shape: 1.0,
+        sigma_re_b1_scale: 1.0,
+        sigma_re_deltas_shape: 1.0,
+        sigma_re_deltas_scale: 1.0,
         p_b0: p_b0 as usize,
         p_b1: p_b1 as usize,
         p_deltas: p_deltas.iter().map(|&p| p as usize).collect(),
@@ -267,7 +294,7 @@ fn run_mcmc_ss(
     let base_seed = seed as u64;
     let n_cores = (n_cores as usize).max(1);
 
-    let results: Vec<(DMatrix<f64>, usize)> = if n_cores > 1 && n_chains > 1 {
+    let results: Vec<(DMatrix<f64>, [usize; 4])> = if n_cores > 1 && n_chains > 1 {
         let pool = rayon::ThreadPoolBuilder::new().num_threads(n_cores).build().unwrap();
         pool.install(|| {
             (0..n_chains).into_par_iter().map(|c| {
@@ -282,15 +309,26 @@ fn run_mcmc_ss(
         }).collect()
     };
 
-    let (chain_results, divergences): (Vec<Robj>, Vec<i32>) = results.into_iter().map(|(draws, n_div)| {
+    let mut chain_results: Vec<Robj> = Vec::with_capacity(results.len());
+    let mut div_total: Vec<i32> = Vec::with_capacity(results.len());
+    let mut div_subj:  Vec<i32> = Vec::with_capacity(results.len());
+    let mut div_om:    Vec<i32> = Vec::with_capacity(results.len());
+    let mut div_rho:   Vec<i32> = Vec::with_capacity(results.len());
+    for (draws, d) in results.into_iter() {
         let nr = draws.nrows();
         let nc = draws.ncols();
         let flat: Vec<f64> = draws.iter().cloned().collect();
-        let mat = RMatrix::new_matrix(nr, nc, |r, c| flat[c * nr + r]).into();
-        (mat, n_div as i32)
-    }).unzip();
+        let mat: Robj = RMatrix::new_matrix(nr, nc, |r, c| flat[c * nr + r]).into();
+        chain_results.push(mat);
+        div_total.push(d[0] as i32);  // [total, subj, om, rho]
+        div_subj.push(d[1] as i32);
+        div_om.push(d[2] as i32);
+        div_rho.push(d[3] as i32);
+    }
 
-    list!(draws = chain_results, n_divergent = divergences)
+    list!(draws = chain_results, n_divergent = div_total,
+          n_divergent_subj = div_subj, n_divergent_om = div_om,
+          n_divergent_rho = div_rho)
 }
 
 /// @noRd
@@ -307,6 +345,13 @@ fn run_mcmc_re(
     group_b0: &[i32],
     n_groups_b0: i32,
     re_mask_om: List,
+    nc_om_per_group: List,
+    re_mask_b1: &[i32],
+    re_mask_deltas: List,
+    nc_b1: bool,
+    nc_deltas: &[i32],
+    group_re: &[i32],
+    n_subjects: i32,
     prior_mean_b0: &[f64], prior_sd_b0: &[f64], prior_lb_b0: &[f64], prior_ub_b0: &[f64],
     prior_mean_b1: &[f64], prior_sd_b1: &[f64], prior_lb_b1: &[f64], prior_ub_b1: &[f64],
     prior_mean_deltas: List, prior_sd_deltas: List, prior_lb_deltas: List, prior_ub_deltas: List,
@@ -318,6 +363,10 @@ fn run_mcmc_re(
     sigma_u_scale: f64,
     sigma_re_om_shape: f64,
     sigma_re_om_scale: f64,
+    sigma_re_b1_shape: f64,
+    sigma_re_b1_scale: f64,
+    sigma_re_deltas_shape: f64,
+    sigma_re_deltas_scale: f64,
     step_om: f64,
     step_rho: f64,
     target_accept: f64,
@@ -338,6 +387,20 @@ fn run_mcmc_re(
     if p_rho.len() == 1 && p_rho[0] == -1 { p_rho = &[]; }
     if group_b0.len() == 1 && group_b0[0] == -1 { group_b0 = &[]; }
 
+    // Per-group NC flags: one Vec<bool> per breakpoint, one entry per RE subject.
+    // Sentinel [-1] means no omega RE for that breakpoint -> empty inner vec.
+    let nc_om_pg: Vec<Vec<bool>> = nc_om_per_group.iter().map(|r| {
+        let v = r.1.as_integer_vector().unwrap();
+        if v.len() == 1 && v[0] == -1 { vec![] } else { v.iter().map(|&x| x > 0).collect() }
+    }).collect();
+    let nc_deltas_bool: Vec<bool> = nc_deltas.iter().map(|&v| v != 0).collect();
+    // Use v > 0 (not v != 0) so that the sentinel value -1 from R is treated as false.
+    let re_mask_b1_bool: Vec<bool> = re_mask_b1.iter().map(|&v| v > 0).collect();
+    let re_mask_deltas_bool: Vec<Vec<bool>> = re_mask_deltas.iter()
+        .map(|r| r.1.as_integer_vector().unwrap().iter().map(|&v| v > 0).collect()).collect();
+    let mut group_re_vec = group_re.to_vec();
+    if group_re_vec.len() == 1 && group_re_vec[0] == -1 { group_re_vec = vec![-1_i32; y.len()]; }
+
     let n = y.len();
     let n_bp = p_deltas.len();
 
@@ -354,6 +417,10 @@ fn run_mcmc_re(
         n_breakpoints: n_bp,
         n,
         re_mask_om: re_mask_om.iter().map(|r| r.1.as_integer_vector().unwrap().iter().map(|&v| v != 0).collect()).collect(),
+        re_mask_b1: re_mask_b1_bool,
+        re_mask_deltas: re_mask_deltas_bool,
+        group_re: group_re_vec,
+        n_subjects: n_subjects as usize,
     };
 
     let priors = Priors {
@@ -377,12 +444,10 @@ fn run_mcmc_re(
         rho_sd: prior_sd_rho.iter().map(|r| r.1.as_real_vector().unwrap()).collect(),
         rho_lb: prior_lb_rho.iter().map(|r| r.1.as_real_vector().unwrap()).collect(),
         rho_ub: prior_ub_rho.iter().map(|r| r.1.as_real_vector().unwrap()).collect(),
-        sigma_shape,
-        sigma_scale,
-        sigma_u_shape,
-        sigma_u_scale,
-        sigma_re_om_shape,
-        sigma_re_om_scale,
+        sigma_shape, sigma_scale, sigma_u_shape, sigma_u_scale,
+        sigma_re_om_shape, sigma_re_om_scale,
+        sigma_re_b1_shape, sigma_re_b1_scale,
+        sigma_re_deltas_shape, sigma_re_deltas_scale,
         p_b0: p_b0 as usize,
         p_b1: p_b1 as usize,
         p_deltas: p_deltas.iter().map(|&p| p as usize).collect(),
@@ -396,30 +461,41 @@ fn run_mcmc_re(
     let base_seed = seed as u64;
     let n_cores = (n_cores as usize).max(1);
 
-    let results: Vec<(DMatrix<f64>, usize)> = if n_cores > 1 && n_chains > 1 {
+    let results: Vec<(DMatrix<f64>, [usize; 4])> = if n_cores > 1 && n_chains > 1 {
         let pool = rayon::ThreadPoolBuilder::new().num_threads(n_cores).build().unwrap();
         pool.install(|| {
             (0..n_chains).into_par_iter().map(|c| {
                 let seed = base_seed.wrapping_add(c as u64 * 1_000_003);
-                run_chain_re(&data, &priors, n_iter, n_warmup, step_om, step_rho, target_accept, seed, false, c, n_chains, &|_,_,_,_,_| {})
+                run_chain_re(&data, &priors, n_iter, n_warmup, step_om, step_rho, target_accept, seed, false, c, n_chains, &nc_om_pg, nc_b1, &nc_deltas_bool, &|_,_,_,_,_| {})
             }).collect()
         })
     } else {
         (0..n_chains).map(|c| {
             let seed = base_seed.wrapping_add(c as u64 * 1_000_003);
-            run_chain_re(&data, &priors, n_iter, n_warmup, step_om, step_rho, target_accept, seed, verbose, c, n_chains, &|_,_,_,_,_| {})
+            run_chain_re(&data, &priors, n_iter, n_warmup, step_om, step_rho, target_accept, seed, verbose, c, n_chains, &nc_om_pg, nc_b1, &nc_deltas_bool, &|_,_,_,_,_| {})
         }).collect()
     };
 
-    let (chain_results, divergences): (Vec<Robj>, Vec<i32>) = results.into_iter().map(|(draws, n_div)| {
+    let mut chain_results: Vec<Robj> = Vec::with_capacity(results.len());
+    let mut div_total: Vec<i32> = Vec::with_capacity(results.len());
+    let mut div_subj:  Vec<i32> = Vec::with_capacity(results.len());
+    let mut div_om:    Vec<i32> = Vec::with_capacity(results.len());
+    let mut div_rho:   Vec<i32> = Vec::with_capacity(results.len());
+    for (draws, d) in results.into_iter() {
         let nr = draws.nrows();
         let nc = draws.ncols();
         let flat: Vec<f64> = draws.iter().cloned().collect();
-        let mat = RMatrix::new_matrix(nr, nc, |r, c| flat[c * nr + r]).into();
-        (mat, n_div as i32)
-    }).unzip();
+        let mat: Robj = RMatrix::new_matrix(nr, nc, |r, c| flat[c * nr + r]).into();
+        chain_results.push(mat);
+        div_total.push(d[0] as i32);  // [total, subj, om, rho]
+        div_subj.push(d[1] as i32);
+        div_om.push(d[2] as i32);
+        div_rho.push(d[3] as i32);
+    }
 
-    list!(draws = chain_results, n_divergent = divergences)
+    list!(draws = chain_results, n_divergent = div_total,
+          n_divergent_subj = div_subj, n_divergent_om = div_om,
+          n_divergent_rho = div_rho)
 }
 
 /// @noRd
@@ -436,17 +512,19 @@ fn run_mcmc_re_ss(
     group_b0: &[i32],
     n_groups_b0: i32,
     re_mask_om: List,
+    nc_om_per_group: List,
+    re_mask_b1: &[i32],
+    re_mask_deltas: List,
+    nc_b1: bool,
+    nc_deltas: &[i32],
+    group_re: &[i32],
+    n_subjects: i32,
     prior_mean_b0: &[f64], prior_sd_b0: &[f64], prior_lb_b0: &[f64], prior_ub_b0: &[f64],
     prior_mean_b1: &[f64], prior_sd_b1: &[f64], prior_lb_b1: &[f64], prior_ub_b1: &[f64],
     prior_mean_deltas: List, prior_sd_deltas: List, prior_lb_deltas: List, prior_ub_deltas: List,
     prior_mean_om: List, prior_sd_om: List, prior_lb_om: List, prior_ub_om: List,
     prior_mean_rho: List, prior_sd_rho: List, prior_lb_rho: List, prior_ub_rho: List,
-    sigma_shape: f64,
-    sigma_scale: f64,
-    sigma_u_shape: f64,
-    sigma_u_scale: f64,
-    sigma_re_om_shape: f64,
-    sigma_re_om_scale: f64,
+    hyper_priors: &[f64],
     step_om: f64,
     step_rho: f64,
     target_accept: f64,
@@ -455,13 +533,25 @@ fn run_mcmc_re_ss(
     pi_init: f64,
     pi_beta_a: f64,
     pi_beta_b: f64,
-    chains: i32,
-    iter: i32,
-    warmup: i32,
-    seed: i32,
-    verbose: bool,
-    n_cores: i32,
+    mcmc_control: &[i32],
 ) -> List {
+    let sigma_shape = hyper_priors[0];
+    let sigma_scale = hyper_priors[1];
+    let sigma_u_shape = hyper_priors[2];
+    let sigma_u_scale = hyper_priors[3];
+    let sigma_re_om_shape = hyper_priors[4];
+    let sigma_re_om_scale = hyper_priors[5];
+    let sigma_re_b1_shape = hyper_priors[6];
+    let sigma_re_b1_scale = hyper_priors[7];
+    let sigma_re_deltas_shape = hyper_priors[8];
+    let sigma_re_deltas_scale = hyper_priors[9];
+
+    let chains = mcmc_control[0];
+    let iter = mcmc_control[1];
+    let warmup = mcmc_control[2];
+    let seed = mcmc_control[3];
+    let verbose = mcmc_control[4] != 0;
+    let n_cores = mcmc_control[5];
     let mut p_deltas = p_deltas;
     let mut p_om = p_om;
     let mut p_rho = p_rho;
@@ -474,6 +564,19 @@ fn run_mcmc_re_ss(
     if group_b0.len() == 1 && group_b0[0] == -1 { group_b0 = &[]; }
     if b1_spike_mask.len() == 1 && b1_spike_mask[0] == -1 { b1_spike_mask = &[]; }
 
+    // Per-group NC flags: one Vec<bool> per breakpoint, one entry per RE subject.
+    // Sentinel [-1] means no omega RE for that breakpoint -> empty inner vec.
+    let nc_om_pg: Vec<Vec<bool>> = nc_om_per_group.iter().map(|r| {
+        let v = r.1.as_integer_vector().unwrap();
+        if v.len() == 1 && v[0] == -1 { vec![] } else { v.iter().map(|&x| x > 0).collect() }
+    }).collect();
+    let nc_deltas_bool: Vec<bool> = nc_deltas.iter().map(|&v| v != 0).collect();
+    // Use v > 0 (not v != 0) so that the sentinel value -1 from R is treated as false.
+    let re_mask_b1_bool: Vec<bool> = re_mask_b1.iter().map(|&v| v > 0).collect();
+    let re_mask_deltas_bool: Vec<Vec<bool>> = re_mask_deltas.iter()
+        .map(|r| r.1.as_integer_vector().unwrap().iter().map(|&v| v > 0).collect()).collect();
+    let mut group_re_vec = group_re.to_vec();
+    if group_re_vec.len() == 1 && group_re_vec[0] == -1 { group_re_vec = vec![-1_i32; y.len()]; }
     let n = y.len();
     let n_bp = p_deltas.len();
 
@@ -490,6 +593,10 @@ fn run_mcmc_re_ss(
         n_breakpoints: n_bp,
         n,
         re_mask_om: re_mask_om.iter().map(|r| r.1.as_integer_vector().unwrap().iter().map(|&v| v != 0).collect()).collect(),
+        re_mask_b1: re_mask_b1_bool,
+        re_mask_deltas: re_mask_deltas_bool,
+        group_re: group_re_vec,
+        n_subjects: n_subjects as usize,
     };
 
     let priors = Priors {
@@ -513,12 +620,10 @@ fn run_mcmc_re_ss(
         rho_sd: prior_sd_rho.iter().map(|r| r.1.as_real_vector().unwrap()).collect(),
         rho_lb: prior_lb_rho.iter().map(|r| r.1.as_real_vector().unwrap()).collect(),
         rho_ub: prior_ub_rho.iter().map(|r| r.1.as_real_vector().unwrap()).collect(),
-        sigma_shape,
-        sigma_scale,
-        sigma_u_shape,
-        sigma_u_scale,
-        sigma_re_om_shape,
-        sigma_re_om_scale,
+        sigma_shape, sigma_scale, sigma_u_shape, sigma_u_scale,
+        sigma_re_om_shape, sigma_re_om_scale,
+        sigma_re_b1_shape, sigma_re_b1_scale,
+        sigma_re_deltas_shape, sigma_re_deltas_scale,
         p_b0: p_b0 as usize,
         p_b1: p_b1 as usize,
         p_deltas: p_deltas.iter().map(|&p| p as usize).collect(),
@@ -540,30 +645,41 @@ fn run_mcmc_re_ss(
     let base_seed = seed as u64;
     let n_cores = (n_cores as usize).max(1);
 
-    let results: Vec<(DMatrix<f64>, usize)> = if n_cores > 1 && n_chains > 1 {
+    let results: Vec<(DMatrix<f64>, [usize; 4])> = if n_cores > 1 && n_chains > 1 {
         let pool = rayon::ThreadPoolBuilder::new().num_threads(n_cores).build().unwrap();
         pool.install(|| {
             (0..n_chains).into_par_iter().map(|c| {
                 let seed = base_seed.wrapping_add(c as u64 * 1_000_003);
-                run_chain_re_ss(&data, &priors, &ss, n_iter, n_warmup, step_om, step_rho, target_accept, seed, false, c, n_chains, &|_,_,_,_,_| {})
+                run_chain_re_ss(&data, &priors, &ss, n_iter, n_warmup, step_om, step_rho, target_accept, seed, false, c, n_chains, &nc_om_pg, nc_b1, &nc_deltas_bool, &|_,_,_,_,_| {})
             }).collect()
         })
     } else {
         (0..n_chains).map(|c| {
             let seed = base_seed.wrapping_add(c as u64 * 1_000_003);
-            run_chain_re_ss(&data, &priors, &ss, n_iter, n_warmup, step_om, step_rho, target_accept, seed, verbose, c, n_chains, &|_,_,_,_,_| {})
+            run_chain_re_ss(&data, &priors, &ss, n_iter, n_warmup, step_om, step_rho, target_accept, seed, verbose, c, n_chains, &nc_om_pg, nc_b1, &nc_deltas_bool, &|_,_,_,_,_| {})
         }).collect()
     };
 
-    let (chain_results, divergences): (Vec<Robj>, Vec<i32>) = results.into_iter().map(|(draws, n_div)| {
+    let mut chain_results: Vec<Robj> = Vec::with_capacity(results.len());
+    let mut div_total: Vec<i32> = Vec::with_capacity(results.len());
+    let mut div_subj:  Vec<i32> = Vec::with_capacity(results.len());
+    let mut div_om:    Vec<i32> = Vec::with_capacity(results.len());
+    let mut div_rho:   Vec<i32> = Vec::with_capacity(results.len());
+    for (draws, d) in results.into_iter() {
         let nr = draws.nrows();
         let nc = draws.ncols();
         let flat: Vec<f64> = draws.iter().cloned().collect();
-        let mat = RMatrix::new_matrix(nr, nc, |r, c| flat[c * nr + r]).into();
-        (mat, n_div as i32)
-    }).unzip();
+        let mat: Robj = RMatrix::new_matrix(nr, nc, |r, c| flat[c * nr + r]).into();
+        chain_results.push(mat);
+        div_total.push(d[0] as i32);  // [total, subj, om, rho]
+        div_subj.push(d[1] as i32);
+        div_om.push(d[2] as i32);
+        div_rho.push(d[3] as i32);
+    }
 
-    list!(draws = chain_results, n_divergent = divergences)
+    list!(draws = chain_results, n_divergent = div_total,
+          n_divergent_subj = div_subj, n_divergent_om = div_om,
+          n_divergent_rho = div_rho)
 }
 
 extendr_module! {
@@ -625,7 +741,11 @@ fn run_bridge(
         n_groups_b0: n_groups_b0 as usize,
         n_breakpoints: n_bp,
         n,
-        re_mask_om: Vec::new(),
+        re_mask_om:     Vec::new(),
+        re_mask_b1:     Vec::new(),
+        re_mask_deltas: Vec::new(),
+        group_re:       vec![-1_i32; n],
+        n_subjects:     0,
     };
 
     let priors = Priors {
@@ -655,6 +775,10 @@ fn run_bridge(
         sigma_u_scale,
         sigma_re_om_shape: 1.0,
         sigma_re_om_scale: 1.0,
+        sigma_re_b1_shape: 1.0,
+        sigma_re_b1_scale: 1.0,
+        sigma_re_deltas_shape: 1.0,
+        sigma_re_deltas_scale: 1.0,
         p_b0: p_b0 as usize,
         p_b1: p_b1 as usize,
         p_deltas: p_deltas.iter().map(|&p| p as usize).collect(),

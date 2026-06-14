@@ -10,7 +10,7 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = NOT_CRAN)
 #   n_obs     = 8,
 #   b0        = 5.0,   # level at change-point
 #   b1        = -0.3,  # pre-change slope
-#   b2        =  1.2,  # slope change (delta_1)
+#   delta     =  1.2,  # slope change (delta_1)
 #   omega     =  3.0,  # change-point location
 #   rho       =  4.0,  # transition sharpness
 #   sigma     =  0.4,  # residual SD
@@ -191,4 +191,14 @@ knitr::opts_chunk$set(collapse = TRUE, comment = "#>", eval = NOT_CRAN)
 ## ----fitted-conditional-------------------------------------------------------
 # # Subject-specific predictions
 # fitted(fit1, newdata = data.frame(tau = seq(0, 6, by = 0.1), subject = "1"))
+
+## ----capture-example, eval=FALSE----------------------------------------------
+# methods_txt <- model_methods(fit1)
+# results_txt <- model_results(fit1)
+
+## ----model-methods------------------------------------------------------------
+# model_methods(fit1)
+
+## ----model-results------------------------------------------------------------
+# model_results(fit1)
 

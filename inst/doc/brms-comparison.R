@@ -32,7 +32,7 @@ if (!have_mcp && NOT_CRAN) {
 # set.seed(31)
 # dat <- simulate_smoothbp(
 #   n_subj = 25, n_obs = 10,
-#   b0 = 5.0, b1 = -0.4, b2 = 1.4,
+#   b0 = 5.0, b1 = -0.4, delta = 1.4,
 #   omega = 3.2, rho = 4.0,
 #   sigma = 0.4, sigma_u = 0.7,
 #   seed = 31L
@@ -53,7 +53,13 @@ if (!have_mcp && NOT_CRAN) {
 #     b0      = prior_normal(0, 10),
 #     b1      = prior_normal(0, 2),
 #     omega   = list(prior_normal(3, 2, lb = 0, ub = max(dat$tau))),
-#     rho     = list(prior_normal(3, 2, lb = 0))
+#     rho     = list(prior_normal(3, 2, lb = 0)),
+#     # Diffuse variance priors, matched (as closely as the two parameterisations
+#     # allow) to the brms half-t below. smoothbp's variance update is conjugate,
+#     # so the family must be inverse-gamma; (0.001, 0.001) makes it effectively
+#     # non-informative for the well-identified residual SD.
+#     sigma   = prior_invgamma(0.001, 0.001),
+#     sigma_u = prior_invgamma(0.001, 0.001)
 #   ),
 #   chains  = 4L, iter = 2000L, warmup = 1000L,
 #   seed    = 31L, .verbose = FALSE
@@ -63,11 +69,14 @@ if (!have_mcp && NOT_CRAN) {
 ## ----fit-brms, eval = have_brms, message = FALSE, warning = FALSE, results = "hide"----
 # suppressPackageStartupMessages(library(brms))
 # 
+# # Note: brms requires named non-linear parameters in its formula.  Here `b2`
+# # is the brms-side name for the slope-change parameter; it corresponds to
+# # `delta` (delta_1) in smoothbp's parameterisation.
 # bf_smoothed <- brms::bf(
 #   y ~ b0 + b1 * (tau - omega) +
 #         b2 * (tau - omega) / (1 + exp(-(tau - omega) * rho)),
 #   b0 ~ 1 + (1 | subject),
-#   b1 ~ 1, b2 ~ 1, omega ~ 1, rho ~ 1,
+#   b1 ~ 1, b2 ~ 1, omega ~ 1, rho ~ 1,  # b2 = smoothbp's delta_1
 #   nl = TRUE
 # )
 # 
@@ -83,7 +92,14 @@ if (!have_mcp && NOT_CRAN) {
 #   brms::prior(normal(0, 2),  nlpar = "b2"),
 #   brms::prior_string("normal(3, 2)", nlpar = "omega",
 #                      lb = 0, ub = ub_omega),
-#   brms::prior(normal(3, 2),  nlpar = "rho",   lb = 0)
+#   brms::prior(normal(3, 2),  nlpar = "rho",   lb = 0),
+#   # Diffuse variance priors, matched to smoothbp's near-non-informative
+#   # inverse-gamma above. A wide half-t leaves the residual SD likelihood-
+#   # dominated; the group SD remains weakly identified with only 25 subjects.
+#   # In a non-linear model the group SD belongs to its nlpar, so `nlpar = "b0"`
+#   # is required (a bare `class = "sd"` matches no parameter).
+#   brms::prior(student_t(3, 0, 10), class = "sigma"),
+#   brms::prior(student_t(3, 0, 10), class = "sd", nlpar = "b0")
 # )
 # 
 # # Initialise every chain near the prior mean.  Without this, Stan's default
@@ -166,7 +182,7 @@ if (!have_mcp && NOT_CRAN) {
 #                caption = "Posterior summaries for both packages.")
 
 ## ----overlay, eval = have_brms, fig.height = 5--------------------------------
-# ggplot(draws_long, aes(x = value, fill = package, colour = package)) +
+# p_overlay <- ggplot(draws_long, aes(x = value, fill = package, colour = package)) +
 #   geom_density(alpha = 0.35) +
 #   facet_wrap(~ parameter, scales = "free", ncol = 3) +
 #   scale_fill_manual(values  = c(smoothbp = "#1f77b4", brms = "#d62728")) +
@@ -181,6 +197,58 @@ if (!have_mcp && NOT_CRAN) {
 #   ) +
 #   theme_minimal(base_size = 11) +
 #   theme(legend.position = "bottom")
+# p_overlay
+
+## ----w1, eval = have_brms-----------------------------------------------------
+# # standardised 1-D 1-Wasserstein distance between two samples
+# w1_std <- function(x, y) {
+#   p  <- ppoints(1000)
+#   qx <- quantile(x, p, names = FALSE, type = 8)
+#   qy <- quantile(y, p, names = FALSE, type = 8)
+#   mean(abs(qx - qy)) / stats::sd(c(x, y))
+# }
+# 
+# # second smoothbp run (different seed) as a within-sampler Monte Carlo reference
+# fit_sbp_b <- smoothbp(
+#   formula = y ~ tau,
+#   b0      = ~ 1 + (1 | subject),
+#   b1      = ~ 1,
+#   deltas  = list(~ 1),
+#   omega   = list(~ 1),
+#   rho     = list(~ 1),
+#   data    = dat,
+#   priors  = smoothbp_priors(
+#     b0      = prior_normal(0, 10),
+#     b1      = prior_normal(0, 2),
+#     omega   = list(prior_normal(3, 2, lb = 0, ub = max(dat$tau))),
+#     rho     = list(prior_normal(3, 2, lb = 0)),
+#     sigma   = prior_invgamma(0.001, 0.001),
+#     sigma_u = prior_invgamma(0.001, 0.001)
+#   ),
+#   chains  = 4L, iter = 2000L, warmup = 1000L,
+#   seed    = 32L, .verbose = FALSE
+# )
+# 
+# sbp_a  <- posterior::as_draws_df(fit_sbp$draws)[, sbp_names]
+# sbp_b  <- posterior::as_draws_df(fit_sbp_b$draws)[, sbp_names]
+# brms_w <- as.data.frame(posterior::as_draws_df(fit_brms))[, brms_names]
+# colnames(brms_w) <- sbp_names
+# 
+# data.frame(
+#   parameter = sbp_names,
+#   W1_cross  = vapply(sbp_names, function(nm) w1_std(sbp_a[[nm]], brms_w[[nm]]), numeric(1)),
+#   W1_null   = vapply(sbp_names, function(nm) w1_std(sbp_a[[nm]], sbp_b[[nm]]),  numeric(1)),
+#   row.names = NULL
+# ) |>
+#   knitr::kable(digits = 3,
+#     caption = "Standardised 1-Wasserstein distance (pooled-SD units): smoothbp vs
+#                brms (W1_cross) and a within-sampler reference from two smoothbp
+#                seeds (W1_null). Cross comparable to null => indistinguishable up
+#                to Monte Carlo error.")
+
+## ----overlay-export, eval = FALSE---------------------------------------------
+# ggplot2::ggsave("figure_overlay_s1.png", p_overlay,
+#                 width = 7, height = 5, dpi = 150)
 
 ## ----ess, eval = have_brms----------------------------------------------------
 # ess_sbp  <- posterior::summarise_draws(fit_sbp$draws, ess_bulk) %>%
@@ -198,6 +266,15 @@ if (!have_mcp && NOT_CRAN) {
 # dplyr::full_join(ess_sbp, ess_brms, by = "parameter") %>%
 #   knitr::kable(digits = 1,
 #                caption = "Bulk ESS / second by package and parameter.")
+
+## ----timing-s1, eval = have_brms----------------------------------------------
+# data.frame(
+#   package     = c("smoothbp", "brms (Stan/NUTS)"),
+#   wall_clock_s = round(c(time_sbp, time_brms), 1),
+#   speedup      = c(sprintf("%.0fx faster", time_brms / time_sbp), "reference")
+# ) |>
+#   knitr::kable(col.names = c("Package", "Wall-clock (s)", "Relative speed"),
+#                caption   = "Scenario 1 wall-clock time. Single run on the same machine.")
 
 ## ----simulate-cov-------------------------------------------------------------
 # set.seed(8147)
@@ -397,6 +474,15 @@ if (!have_mcp && NOT_CRAN) {
 #   knitr::kable(digits = 1,
 #                caption = "Bulk ESS / second by package and parameter (covariate model).")
 
+## ----timing-s2, eval = have_brms----------------------------------------------
+# data.frame(
+#   package      = c("smoothbp", "brms (Stan/NUTS)"),
+#   wall_clock_s = round(c(time_sbp_cov, time_brms_cov), 1),
+#   speedup       = c(sprintf("%.0fx faster", time_brms_cov / time_sbp_cov), "reference")
+# ) |>
+#   knitr::kable(col.names = c("Package", "Wall-clock (s)", "Relative speed"),
+#                caption   = "Scenario 2 wall-clock time. Covariate-on-omega model.")
+
 ## ----mcp-simulate-------------------------------------------------------------
 # set.seed(5501)
 # 
@@ -405,7 +491,7 @@ if (!have_mcp && NOT_CRAN) {
 #   n_obs     = 150,
 #   b0        = 5.0,
 #   b1        = -0.4,
-#   b2        =  1.4,
+#   delta     =  1.4,
 #   omega     =  3.2,
 #   rho       =  5.0,   # moderately sharp — should agree well with mcp
 #   sigma     =  0.4,
@@ -584,6 +670,15 @@ if (!have_mcp && NOT_CRAN) {
 # ) |>
 #   knitr::kable(caption = "ESS/second: smoothbp vs mcp.
 #                           Higher is better.")
+
+## ----timing-s3----------------------------------------------------------------
+# data.frame(
+#   package      = c("smoothbp", "mcp (JAGS)"),
+#   wall_clock_s = round(c(time_sbp_mcp, time_mcp), 1),
+#   speedup       = c(sprintf("%.0fx faster", time_mcp / time_sbp_mcp), "reference")
+# ) |>
+#   knitr::kable(col.names = c("Package", "Wall-clock (s)", "Relative speed"),
+#                caption   = "Scenario 3 wall-clock time. Single-group, n = 150.")
 
 ## ----simulate-multi-----------------------------------------------------------
 # set.seed(9801)
@@ -770,4 +865,13 @@ if (!have_mcp && NOT_CRAN) {
 # dplyr::full_join(ess_sbp_multi, ess_brms_multi, by = "parameter") |>
 #   knitr::kable(digits = 1,
 #                caption = "ESS/second: smoothbp vs brms (two-breakpoint model).")
+
+## ----timing-s4, eval = have_brms----------------------------------------------
+# data.frame(
+#   package      = c("smoothbp", "brms (Stan/NUTS)"),
+#   wall_clock_s = round(c(time_sbp_multi, time_brms_multi), 1),
+#   speedup       = c(sprintf("%.0fx faster", time_brms_multi / time_sbp_multi), "reference")
+# ) |>
+#   knitr::kable(col.names = c("Package", "Wall-clock (s)", "Relative speed"),
+#                caption   = "Scenario 4 wall-clock time. Two-breakpoint model (single group, fixed effects).")
 

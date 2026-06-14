@@ -349,7 +349,7 @@ logistic sigmoid. The general mean function for <span class="math inline">\(K\)<
 <p><span class="math display">\[
 \mu_i = b0_i + b1_i(\tau_i - \omega_{1i}) +
   \sum_{k=1}^{K} \delta_{ki}(\tau_i - \omega_{ki})\,
-  \sigma\!\left[(\tau_i - \omega_{ki})\rho_{ki}\right]
+  \text{logistic}\!\left[(\tau_i - \omega_{ki})\rho_{ki}\right]
 \]</span></p>
 <p>where</p>
 <table>
@@ -446,7 +446,7 @@ relate to the observable trajectory shape.</p>
 <span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a>  <span class="at">n_obs     =</span> <span class="dv">8</span>,</span>
 <span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a>  <span class="at">b0        =</span> <span class="fl">5.0</span>,   <span class="co"># level at change-point</span></span>
 <span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a>  <span class="at">b1        =</span> <span class="sc">-</span><span class="fl">0.3</span>,  <span class="co"># pre-change slope</span></span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>  <span class="at">b2        =</span>  <span class="fl">1.2</span>,  <span class="co"># slope change (delta_1)</span></span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a>  <span class="at">delta     =</span>  <span class="fl">1.2</span>,  <span class="co"># slope change (delta_1)</span></span>
 <span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a>  <span class="at">omega     =</span>  <span class="fl">3.0</span>,  <span class="co"># change-point location</span></span>
 <span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a>  <span class="at">rho       =</span>  <span class="fl">4.0</span>,  <span class="co"># transition sharpness</span></span>
 <span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a>  <span class="at">sigma     =</span>  <span class="fl">0.4</span>,  <span class="co"># residual SD</span></span>
@@ -802,6 +802,63 @@ manipulate and summarize the draws.</p>
 <h3>Conditional predictions</h3>
 <div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="co"># Subject-specific predictions</span></span>
 <span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a><span class="fu">fitted</span>(fit1, <span class="at">newdata =</span> <span class="fu">data.frame</span>(<span class="at">tau =</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">6</span>, <span class="at">by =</span> <span class="fl">0.1</span>), <span class="at">subject =</span> <span class="st">&quot;1&quot;</span>))</span></code></pre></div>
+<hr />
+</div>
+</div>
+<div id="manuscript-ready-reporting" class="section level2">
+<h2>Manuscript-ready reporting</h2>
+<p><code>model_methods()</code> and <code>model_results()</code>
+generate structured, self-contained text reports from a fitted model.
+Both functions are designed to be readily adapted for use in a
+manuscript or report, <strong>or</strong> passed to a large language
+model (LLM): the output includes the full algebraic specification with
+every symbol defined and every parameter value or prior stated
+explicitly, so no package documentation is needed to interpret the
+report.</p>
+<p>The return value of each function is the complete report as an
+invisible character string, so you can capture it for programmatic
+use:</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a>methods_txt <span class="ot">&lt;-</span> <span class="fu">model_methods</span>(fit1)</span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a>results_txt <span class="ot">&lt;-</span> <span class="fu">model_results</span>(fit1)</span></code></pre></div>
+<p><code>model_methods()</code> also emits a brief convergence note: if
+any Rhat values exceed 1.05, effective sample sizes fall below 100, or
+divergent transitions are present, a warning is printed with suggested
+diagnostics so that model-specification issues can be caught before
+results are reported.</p>
+<div id="statistical-analysis-section-model_methods" class="section level3">
+<h3>Statistical Analysis section — <code>model_methods()</code></h3>
+<p><code>model_methods()</code> describes <em>how</em> the analysis was
+done. It produces:</p>
+<ul>
+<li>a narrative paragraph readily adapted for use in the Methods
+section,</li>
+<li>the formula syntax and structural equation with all symbols
+defined,</li>
+<li>the prior distribution for every parameter,</li>
+<li>the MCMC algorithm details (sampler type, chains, iterations, seed),
+and</li>
+<li>a convergence note: silent when all diagnostics pass, prominent when
+Rhat, ESS, or divergent transitions indicate a potential problem.</li>
+</ul>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="fu">model_methods</span>(fit1)</span></code></pre></div>
+</div>
+<div id="results-section-model_results" class="section level3">
+<h3>Results section — <code>model_results()</code></h3>
+<p><code>model_results()</code> describes <em>what was found</em>. It
+produces:</p>
+<ul>
+<li>a narrative paragraph readily adapted for use in the Results
+section,</li>
+<li>the fitted model equation with posterior mean coefficients
+substituted to 3 d.p. (both the algebraic form and the fully numerical
+version),</li>
+<li>the asymptotic pre- and post-breakpoint slopes derived from <span class="math inline">\(b1\)</span> and <span class="math inline">\(\delta_k\)</span>,</li>
+<li>per-breakpoint summaries (location, sharpness, slope change, all
+with 95% credible intervals),</li>
+<li>the full posterior estimates table, and</li>
+<li>convergence diagnostics.</li>
+</ul>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a><span class="fu">model_results</span>(fit1)</span></code></pre></div>
 </div>
 </div>
 
