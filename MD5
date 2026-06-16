@@ -1,8 +1,9 @@
-d6f4893967a7876ddda6230e7e661293 *DESCRIPTION
+c6ac578011ee5557028387ce76fd970f *DESCRIPTION
 f3ea32c8662ed4899375b42718a241a6 *LICENSE
-798161afc4b011966ba2799285c1fedf *NAMESPACE
-13234a67a53a21c666f0a3dbc4b1a3f8 *NEWS.md
+f50f677c1cf9691e4b3b54f37fe8e0f5 *NAMESPACE
+6555a0acb5a0a2159756d9cc34afd298 *NEWS.md
 f773c165c89cb4da677a370624897af4 *R/bridge_sampling.R
+1844c10b7e7145545d6a3d89fcc85d0f *R/derivative.R
 68af9968f73046b17cf425521e6cf864 *R/extendr-wrappers.R
 dce8e2a29e6e5cb7d878b691b2dc155f *R/formula_utils.R
 5bcfd7674a41ea757304ac4b04202e5b *R/generics.R
@@ -46,6 +47,7 @@ c7c20c58267a6a10f476cc8e37a1fe67 *inst/doc/spike-and-slab.html
 cb0f74c321de3315c8c5c5673d8985c9 *man/as.data.frame.smoothbp_fit.Rd
 e5974f800f8e2e83ad24350d94f2f9a5 *man/bayes_factor.smoothbp_fit.Rd
 5e0cadd93645e5eb22c13a3ed622a762 *man/bridge_sampler.smoothbp_fit.Rd
+9eb3fa4813e2c3808a946b9fd406ff8b *man/derivative.Rd
 2d03eef5be2c39bfd6ab4f9ea55a5576 *man/figures/smoothbp_hexlogo.svg
 9c6b02bdc4ec28c79db54038821d6d68 *man/fitted.smoothbp_fit.Rd
 085877d5edb8cdb249c3cf2b645c0945 *man/fixed.Rd
@@ -76,11 +78,11 @@ a245cb2a3129d5db8979ad328d81df88 *man/summary.smoothbp_fit.Rd
 29cfd28bc3ce5de64d31a62bddc6e944 *man/trace_plot.Rd
 1e374a5f3ff842257364f13ca76d166f *man/true_params.Rd
 2a03b65588a31342940a2bd1e7fe08b0 *man/update.smoothbp_fit.Rd
-30ae0aad692a71284915434340044df8 *src/Makevars.in
-c484bba09ad26b5c443407219428dd5b *src/Makevars.win.in
+5da2496cc572f06e249a0c3326356359 *src/Makevars.in
+67f55519c753d61f534ea5437944b59c *src/Makevars.win.in
 7cbe1186f62de90380d1c4072ab0c50e *src/entrypoint.c
 ea647ad41c867b1ccd3ca697160d65a6 *src/rust/Cargo.lock
-b2434e22af73c4df6abbfc0dae1d8c67 *src/rust/Cargo.toml
+9a54acff7d75c59317dd23983f94b0fe *src/rust/Cargo.toml
 c5192a7205113c6a2db32125b361554b *src/rust/document.rs
 c98ebabb5ca125fecf2aa3b08eb2db28 *src/rust/src/bridge.rs
 d6ca45ebe129c55f9d24e4bd7150ccc9 *src/rust/src/lib.rs
